@@ -3,6 +3,7 @@ import NetworkGraph from './components/NetworkGraph';
 import Sidebar from './components/Sidebar';
 import RightSidebar from './components/RightSidebar';
 import MobileBottomNav from './components/MobileBottomNav';
+import { WelcomeModal } from './components/WelcomeModal';
 import { fetchStats, fetchRelationships, fetchActorRelationships, fetchTagClusters } from './api';
 import type { Stats, Relationship, TagCluster } from './types';
 
@@ -20,6 +21,10 @@ function App() {
   const [actorTotalBeforeFilter, setActorTotalBeforeFilter] = useState<number>(0);
   const [limit, setLimit] = useState(isMobile ? 5000 : 15000);
   const [enabledClusterIds, setEnabledClusterIds] = useState<Set<number>>(new Set());
+  const [showWelcome, setShowWelcome] = useState(() => {
+    // Check if user has seen the welcome message before
+    return !localStorage.getItem('hasSeenWelcome');
+  });
 
   // Load tag clusters on mount
   useEffect(() => {
@@ -76,6 +81,12 @@ function App() {
       }
       return next;
     });
+  }, []);
+
+  // Handle closing welcome modal
+  const handleCloseWelcome = useCallback(() => {
+    localStorage.setItem('hasSeenWelcome', 'true');
+    setShowWelcome(false);
   }, []);
 
   // Fetch actor-specific relationships when an actor is selected or clusters change
@@ -162,6 +173,9 @@ function App() {
           relationships={selectedActor ? actorRelationships : relationships}
         />
       </div>
+
+      {/* Welcome Modal */}
+      <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
     </div>
   );
 }
