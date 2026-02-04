@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { searchActors } from '../api';
 import type { Actor, Stats, TagCluster, Relationship } from '../types';
 import DocumentModal from './DocumentModal';
+import { Search, Clock, SlidersHorizontal, X } from 'lucide-react';
 
 interface MobileBottomNavProps {
   stats: Stats | null;
@@ -107,12 +108,13 @@ export default function MobileBottomNav({
                 className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
                 aria-label="Close"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5" />
               </button>
 
-              <h3 className="text-lg font-semibold mb-4">Timeline View</h3>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Timeline
+              </h3>
               {relationships.length > 0 ? (
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                   {relationships.slice(0, 50).map((rel, idx) => (
@@ -206,12 +208,13 @@ export default function MobileBottomNav({
                 className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
                 aria-label="Close"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5" />
               </button>
 
-              <h3 className="text-lg font-semibold mb-4">Filters</h3>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5" />
+                Filters
+              </h3>
 
               <div className="mb-6">
                 <label className="block text-sm text-gray-400 mb-2">
@@ -374,9 +377,7 @@ export default function MobileBottomNav({
               activeTab === 'search' ? 'text-blue-400' : 'text-gray-400'
             }`}
           >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search className="w-6 h-6 mb-1" />
             <span className="text-xs">Search</span>
           </button>
 
@@ -386,9 +387,7 @@ export default function MobileBottomNav({
               activeTab === 'timeline' ? 'text-blue-400' : 'text-gray-400'
             }`}
           >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <Clock className="w-6 h-6 mb-1" />
             <span className="text-xs">Timeline</span>
           </button>
 
@@ -398,9 +397,7 @@ export default function MobileBottomNav({
               activeTab === 'filters' ? 'text-blue-400' : 'text-gray-400'
             }`}
           >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
+            <SlidersHorizontal className="w-6 h-6 mb-1" />
             <span className="text-xs">Filters</span>
           </button>
         </div>

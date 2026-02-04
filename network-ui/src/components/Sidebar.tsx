@@ -1,6 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { searchActors } from '../api';
 import type { Stats, Actor, TagCluster } from '../types';
+import {
+  Network,
+  FileText,
+  Users,
+  X,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  SlidersHorizontal,
+  Filter,
+  Tag,
+  FolderOpen,
+} from 'lucide-react';
 
 interface SidebarProps {
   stats: Stats | null;
@@ -170,44 +183,52 @@ export default function Sidebar({
   };
 
   return (
-    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col h-screen overflow-hidden">
+    <div className="w-80 bg-gray-950/95 border-r border-cyan-900/30 flex flex-col h-screen overflow-hidden backdrop-blur-sm">
       {/* Header */}
-      <div className="px-6 py-3 border-b border-gray-700 flex-shrink-0">
-        <h1 className="font-bold text-blue-400" style={{ fontSize: '20px' }}>
-          📊 The Epstein Network
-        </h1>
-        <a
-          href="https://github.com/maxandrews/Epstein-doc-explorer"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 mt-2 text-xs text-gray-400 hover:text-blue-400 transition-colors"
-        >
-          <span className="underline">Github Repo with data</span>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-          </svg>
-        </a>
+      <div className="px-6 py-4 border-b border-cyan-900/50 flex-shrink-0 bg-gradient-to-r from-cyan-950/50 to-transparent">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Network className="w-6 h-6 text-cyan-400" />
+            <div className="absolute inset-0 w-6 h-6 bg-cyan-400/20 blur-md"></div>
+          </div>
+          <div>
+            <h1 className="font-bold text-cyan-400 tracking-wide" style={{ fontSize: '18px' }}>
+              NETWORK EXPLORER
+            </h1>
+            <p className="text-[10px] text-cyan-600 font-mono tracking-widest">INVESTIGATIVE SYSTEM v2.0</p>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats - HUD Style */}
       {stats && (
-        <div className="p-4 border-b border-gray-700 flex-shrink-0">
+        <div className="p-4 border-b border-cyan-900/30 flex-shrink-0">
+          <div className="text-[10px] text-cyan-600 font-mono tracking-widest mb-2">DATABASE METRICS</div>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Documents:</span>
-              <span className="font-mono text-green-400">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 flex items-center gap-2 font-mono text-xs">
+                <FileText className="w-3.5 h-3.5 text-cyan-600" />
+                DOCUMENTS
+              </span>
+              <span className="font-mono text-cyan-400 text-xs">
                 {stats.totalDocuments.count.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Relationships:</span>
-              <span className="font-mono text-blue-400">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 flex items-center gap-2 font-mono text-xs">
+                <Network className="w-3.5 h-3.5 text-cyan-600" />
+                CONNECTIONS
+              </span>
+              <span className="font-mono text-cyan-400 text-xs">
                 {stats.totalTriples.count.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Actors:</span>
-              <span className="font-mono text-purple-400">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 flex items-center gap-2 font-mono text-xs">
+                <Users className="w-3.5 h-3.5 text-cyan-600" />
+                ENTITIES
+              </span>
+              <span className="font-mono text-cyan-400 text-xs">
                 {stats.totalActors.count.toLocaleString()}
               </span>
             </div>
@@ -217,17 +238,18 @@ export default function Sidebar({
 
       {/* Selected Actor Indicator */}
       {selectedActor && (
-        <div className="p-4 border-b border-gray-700 flex-shrink-0">
-          <div className="flex items-center justify-between bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+        <div className="p-4 border-b border-cyan-900/30 flex-shrink-0">
+          <div className="flex items-center justify-between bg-cyan-950/50 border border-cyan-500/30 rounded-lg p-3">
             <div>
-              <div className="text-xs text-gray-400 mb-1">Selected actor:</div>
-              <div className="font-medium text-blue-300">{selectedActor}</div>
+              <div className="text-[10px] text-cyan-600 font-mono tracking-wider mb-1">TARGET SELECTED</div>
+              <div className="font-medium text-cyan-400 font-mono">{selectedActor}</div>
             </div>
             <button
               onClick={() => onActorSelect(null)}
-              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs font-medium transition-colors"
+              className="p-1.5 bg-red-600 hover:bg-red-700 rounded transition-colors"
+              title="Clear selection"
             >
-              Clear
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -236,13 +258,16 @@ export default function Sidebar({
       {/* Controls Accordion - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         {/* Graph Settings Section */}
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-cyan-900/30">
           <button
             onClick={() => setGraphSettingsExpanded(!graphSettingsExpanded)}
-            className="w-full flex items-center justify-between text-base font-semibold mb-3 hover:text-blue-400 transition-colors"
+            className="w-full flex items-center justify-between text-sm font-mono mb-3 hover:text-cyan-400 transition-colors"
           >
-            <span>Graph Settings</span>
-            <span className="text-sm">{graphSettingsExpanded ? '▼' : '▶'}</span>
+            <span className="flex items-center gap-2 text-gray-300">
+              <SlidersHorizontal className="w-4 h-4 text-cyan-600" />
+              RENDER SETTINGS
+            </span>
+            {graphSettingsExpanded ? <ChevronDown className="w-4 h-4 text-cyan-600" /> : <ChevronRight className="w-4 h-4 text-cyan-600" />}
           </button>
           {graphSettingsExpanded && (
             <>
@@ -319,13 +344,16 @@ export default function Sidebar({
         </div>
 
         {/* Filters Section */}
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-cyan-900/30">
           <button
             onClick={() => setFiltersExpanded(!filtersExpanded)}
-            className="w-full flex items-center justify-between text-base font-semibold mb-3 hover:text-blue-400 transition-colors"
+            className="w-full flex items-center justify-between text-sm font-mono mb-3 hover:text-cyan-400 transition-colors"
           >
-            <span>Filters</span>
-            <span className="text-sm">{filtersExpanded ? '▼' : '▶'}</span>
+            <span className="flex items-center gap-2 text-gray-300">
+              <Filter className="w-4 h-4 text-cyan-600" />
+              DATA FILTERS
+            </span>
+            {filtersExpanded ? <ChevronDown className="w-4 h-4 text-cyan-600" /> : <ChevronRight className="w-4 h-4 text-cyan-600" />}
           </button>
           {filtersExpanded && (
             <>
@@ -408,15 +436,16 @@ export default function Sidebar({
 
               {/* Search */}
               <div className="mb-4 relative">
-                <label className="block text-sm text-gray-400 mb-2">
-                  Search entities:
+                <label className="text-xs text-gray-500 mb-2 flex items-center gap-2 font-mono">
+                  <Search className="w-3.5 h-3.5 text-cyan-600" />
+                  SEARCH ENTITIES
                 </label>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="e.g., Jeffrey Epstein"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  placeholder="Enter target name..."
+                  className="w-full px-3 py-2 bg-gray-900 border border-cyan-900/50 rounded text-sm font-mono focus:outline-none focus:border-cyan-500 text-cyan-400 placeholder-gray-600"
                 />
 
                 {/* Search Results */}
@@ -482,13 +511,16 @@ export default function Sidebar({
         </div>
 
         {/* Tag Cluster Filters */}
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-cyan-900/30">
         <button
           onClick={() => setContentFiltersExpanded(!contentFiltersExpanded)}
-          className="w-full flex items-center justify-between text-base font-semibold mb-3 hover:text-blue-400 transition-colors"
+          className="w-full flex items-center justify-between text-sm font-mono mb-3 hover:text-cyan-400 transition-colors"
         >
-          <span>Content Tags</span>
-          <span className="text-sm">{contentFiltersExpanded ? '▼' : '▶'}</span>
+          <span className="flex items-center gap-2 text-gray-300">
+            <Tag className="w-4 h-4 text-cyan-600" />
+            CONTENT TAGS
+          </span>
+          {contentFiltersExpanded ? <ChevronDown className="w-4 h-4 text-cyan-600" /> : <ChevronRight className="w-4 h-4 text-cyan-600" />}
         </button>
         {contentFiltersExpanded && (
           <>
@@ -527,15 +559,15 @@ export default function Sidebar({
                   <button
                     key={cluster.id}
                     onClick={() => onToggleCluster(cluster.id)}
-                    className={`px-3 py-1 rounded-full font-medium transition-colors ${
+                    className={`px-2 py-1 rounded font-mono transition-colors ${
                       isEnabled
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                        ? 'bg-cyan-600/30 text-cyan-400 border border-cyan-500/50 hover:bg-cyan-600/40'
+                        : 'bg-gray-800 text-gray-500 border border-gray-700 hover:border-gray-600'
                     }`}
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '9px' }}
                     title={`${cluster.tagCount} tags: ${cluster.exemplars.join(', ')}`}
                   >
-                    {cluster.name}
+                    {cluster.name.toUpperCase()}
                   </button>
                 );
               })}
@@ -549,10 +581,13 @@ export default function Sidebar({
           <div className="p-4">
           <button
             onClick={() => setCategoriesExpanded(!categoriesExpanded)}
-            className="w-full flex items-center justify-between text-base font-semibold mb-3 hover:text-blue-400 transition-colors"
+            className="w-full flex items-center justify-between text-sm font-mono mb-3 hover:text-cyan-400 transition-colors"
           >
-            <span>Document Categories</span>
-            <span className="text-sm">{categoriesExpanded ? '▼' : '▶'}</span>
+            <span className="flex items-center gap-2 text-gray-300">
+              <FolderOpen className="w-4 h-4 text-cyan-600" />
+              DOCUMENT TYPES
+            </span>
+            {categoriesExpanded ? <ChevronDown className="w-4 h-4 text-cyan-600" /> : <ChevronRight className="w-4 h-4 text-cyan-600" />}
           </button>
           {categoriesExpanded && (
             <>
@@ -584,23 +619,23 @@ export default function Sidebar({
                   Deselect All
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {stats.categories.slice(0, 10).map((cat) => {
                   const isEnabled = enabledCategories.has(cat.category);
                   return (
                     <button
                       key={cat.category}
                       onClick={() => onToggleCategory(cat.category)}
-                      className={`w-full flex justify-between items-center rounded px-3 py-2 text-sm transition-colors ${
+                      className={`w-full flex justify-between items-center rounded px-3 py-2 text-xs font-mono transition-colors ${
                         isEnabled
-                          ? 'bg-blue-600 text-white hover:bg-blue-700'
-                          : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                          ? 'bg-cyan-600/30 text-cyan-400 border border-cyan-500/50 hover:bg-cyan-600/40'
+                          : 'bg-gray-800 text-gray-500 border border-gray-700 hover:border-gray-600'
                       }`}
                     >
-                      <span className="capitalize">
+                      <span className="uppercase tracking-wider">
                         {cat.category.replace(/_/g, ' ')}
                       </span>
-                      <span className="font-mono text-xs">
+                      <span className="text-cyan-500">
                         {cat.count}
                       </span>
                     </button>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchDocument, fetchDocumentText } from '../api';
 import type { Document } from '../types';
+import { X } from 'lucide-react';
 
 interface DocumentModalProps {
   docId: string;
@@ -250,9 +251,10 @@ export default function DocumentModal({ docId, highlightTerm, secondaryHighlight
           </div>
           <button
             onClick={onClose}
-            className="ml-4 text-gray-400 hover:text-white text-2xl leading-none transition-colors"
+            className="ml-4 text-gray-400 hover:text-white transition-colors p-1"
+            title="Close document"
           >
-            ✕
+            <X className="w-6 h-6" />
           </button>
         </div>
 

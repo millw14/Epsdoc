@@ -429,8 +429,8 @@ export default function NetworkGraph({
       let html = count > 1
         ? `<strong>${count} relationships</strong><br/>${linkData.action}`
         : `<strong>${linkData.action}</strong>`;
-      if (linkData.location) html += `<br/>📍 ${linkData.location}`;
-      if (linkData.timestamp) html += `<br/>📅 ${linkData.timestamp}`;
+      if (linkData.location) html += `<br/><span style="opacity:0.7">Location:</span> ${linkData.location}`;
+      if (linkData.timestamp) html += `<br/><span style="opacity:0.7">Date:</span> ${linkData.timestamp}`;
       tooltip
         .style('visibility', 'visible')
         .html(html);

@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { searchActors, fetchDocument } from '../api';
 import type { Relationship, Document, Actor } from '../types';
 import DocumentModal from './DocumentModal';
+import {
+  X,
+  MapPin,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Search,
+} from 'lucide-react';
 
 interface RightSidebarProps {
   selectedActor: string | null;
@@ -101,9 +109,10 @@ export default function RightSidebar({ selectedActor, relationships, totalRelati
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white transition-colors p-1"
+              title="Close panel"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -190,11 +199,15 @@ export default function RightSidebar({ selectedActor, relationships, totalRelati
                   }`}
                 >
                   <div className="flex items-start justify-between mb-1">
-                    <span className="text-xs text-gray-400">
-                      {rel.timestamp || 'No date'}
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {rel.timestamp || 'Undated'}
                     </span>
                     {rel.location && (
-                      <span className="text-xs text-gray-500">📍 {rel.location}</span>
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {rel.location}
+                      </span>
                     )}
                   </div>
                   <div className="text-sm flex items-center justify-between">
@@ -207,8 +220,8 @@ export default function RightSidebar({ selectedActor, relationships, totalRelati
                         {rel.target}
                       </span>
                     </div>
-                    <span className="text-gray-500 text-xs ml-2">
-                      {expandedTripleId === rel.id ? '▼' : '▶'}
+                    <span className="text-gray-500 ml-2">
+                      {expandedTripleId === rel.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </span>
                   </div>
                 </div>
