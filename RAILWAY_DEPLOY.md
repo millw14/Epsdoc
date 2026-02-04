@@ -2,87 +2,105 @@
 
 ## Quick Deploy Steps
 
-1. **Create Railway Account**
+1. **Host the Database File**
+   The database (266MB) is too large for GitHub. You need to host it externally:
+   
+   **Option A: GitHub Releases (Recommended)**
+   - Go to your repo on GitHub
+   - Click "Releases" → "Create a new release"
+   - Upload `document_analysis.db` as a release asset
+   - Copy the direct download URL (right-click the file → Copy link address)
+   
+   **Option B: Google Drive**
+   - Upload `document_analysis.db` to Google Drive
+   - Right-click → Share → Anyone with link
+   - Convert share link to direct download:
+     `https://drive.google.com/uc?export=download&id=YOUR_FILE_ID`
+
+2. **Create Railway Account**
    - Go to [Railway.app](https://railway.app)
    - Sign up / Login with GitHub
 
-2. **New Project from GitHub**
+3. **New Project from GitHub**
    - Click "New Project"
    - Select "Deploy from GitHub repo"
    - Choose the `Epsdoc` repository
 
-3. **Set Environment Variables**
+4. **Set Environment Variables**
    In Railway dashboard, go to Variables and add:
 
    ```
-   PORT=3001
+   DB_URL=https://github.com/millw14/Epsdoc/releases/download/v1.0/document_analysis.db
    VITE_GROQ_API_KEY=your_groq_api_key_here
    ```
 
-   > Get your Groq API key from [console.groq.com](https://console.groq.com)
+   > **DB_URL** - Direct download URL to your hosted database file
+   > **VITE_GROQ_API_KEY** - Get from [console.groq.com](https://console.groq.com)
 
-4. **Deploy**
+5. **Deploy**
    Railway will automatically:
-   - Install root dependencies
-   - Install frontend dependencies (`network-ui/`)
+   - Download the database from DB_URL
+   - Install dependencies
    - Build the React frontend
    - Start the Express server
 
-5. **Custom Domain (Optional)**
+6. **Custom Domain (Optional)**
    - Go to Settings > Domains
    - Add a custom domain or use the generated `*.up.railway.app` URL
 
 ## Important Notes
 
-### Database
-- The `document_analysis.db` SQLite file must be in the repo
-- Railway uses ephemeral storage - database changes won't persist across deploys
-- For production, consider moving to PostgreSQL
+### Database Hosting
+- The database (266MB) exceeds GitHub's 100MB file limit
+- It's stored in Git LFS for local development
+- For Railway, you must host it externally and provide DB_URL
 
 ### Environment Variables Needed
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PORT` | No | Server port (Railway sets this automatically) |
+| `DB_URL` | **Yes** | Direct download URL to database file |
 | `VITE_GROQ_API_KEY` | Yes | Groq API key for AI features |
+| `PORT` | No | Server port (Railway sets automatically) |
 | `DB_PATH` | No | Database path (defaults to `document_analysis.db`) |
 | `ALLOWED_ORIGINS` | No | CORS origins (Railway domains auto-allowed) |
 
 ### Build Process
-The deployment uses these scripts in order:
-1. `npm install` - Install root dependencies
-2. `postinstall` script - Installs and builds the frontend
-3. `npm start` - Runs the Express server with tsx
+1. Download database from `DB_URL`
+2. `npm install` - Install dependencies
+3. Build frontend (`network-ui/`)
+4. Start Express server
 
-### Files Created for Railway
+### Files for Railway
 
-- `railway.json` - Railway-specific configuration
-- `nixpacks.toml` - Nixpacks build configuration
-- `Procfile` - Alternative process definition
-- `.env.example` - Environment variable template
+- `railway.json` - Railway configuration
+- `nixpacks.toml` - Build configuration (includes curl for downloads)
+- `Procfile` - Process definition
+- `build.sh` - Build script with database download
 
 ## Troubleshooting
 
+### "Database file missing" Error
+- Make sure `DB_URL` environment variable is set in Railway
+- Verify the URL is a direct download link (not a preview page)
+- Test the URL: `curl -I YOUR_DB_URL` should return 200 OK
+
 ### Build Fails
-- Check that `document_analysis.db` is in the repo
-- Ensure all dependencies are listed in package.json
+- Check Railway logs for download errors
+- Verify database URL is accessible
 
 ### Frontend Not Loading
-- Check that the build completed (look for `network-ui/dist/` in logs)
+- Check that build completed in logs
 - Verify CORS is allowing your Railway domain
 
-### API Errors
-- Check the Logs tab in Railway dashboard
-- Verify database file exists and has data
-
 ### AI Not Working
-- Make sure `VITE_GROQ_API_KEY` is set in Railway Variables
-- Note: Frontend env vars need a redeploy to take effect
+- Make sure `VITE_GROQ_API_KEY` is set
+- Frontend env vars need a redeploy to take effect
 
-## Local Testing (before deploy)
+## Local Development
 
 ```bash
-# Install all dependencies
+# Install dependencies
 npm install
 cd network-ui && npm install && cd ..
 
