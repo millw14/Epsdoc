@@ -1,9 +1,17 @@
 {
-  "name": "docnetwork",
+  "name": "webstein",
   "version": "1.0.0",
-  "description": "Document analysis and relationship extraction system",
+  "description": "Webstein - Interactive document network explorer",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "start": "node --loader tsx api_server.ts",
+    "dev": "tsx api_server.ts",
+    "build": "cd network-ui && npm install && npm run build",
+    "build:frontend": "cd network-ui && npm run build",
+    "postinstall": "cd network-ui && npm install && npm run build",
     "analyze": "tsx analyze_documents.ts",
     "query": "tsx query_db.ts",
     "review": "tsx review.ts",
