@@ -7,7 +7,8 @@ import type { Relationship, Stats } from '../types';
 import { getLocationCoords, normalizeLocation } from '../lib/locations';
 import RotatingEarth from './ui/wireframe-dotted-globe';
 import { useAIChat } from '../lib/ai-explanations';
-import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight } from 'lucide-react';
+import { fetchDocumentText, fetchDocument } from '../api';
+import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink } from 'lucide-react';
 
 interface Props {
   relationships: Relationship[];
@@ -32,8 +33,62 @@ export default function GlobeView({ relationships, stats }: Props) {
   const [chatInput, setChatInput] = useState('');
   const [showBubbleMap, setShowBubbleMap] = useState(false);
   const [bubbleMapPerson, setBubbleMapPerson] = useState<string | null>(null);
+  const [bubbleZoom, setBubbleZoom] = useState(1);
+  const [bubblePan, setBubblePan] = useState({ x: 0, y: 0 });
+  const [zoomToPerson, setZoomToPerson] = useState<string | null>(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentText, setDocumentText] = useState<string | null>(null);
+  const [documentMeta, setDocumentMeta] = useState<{ doc_id: string; category: string; summary?: string } | null>(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
+  const [documentAI, setDocumentAI] = useState<string | null>(null);
+  const [documentAILoading, setDocumentAILoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const bubbleCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bubbleNodesRef = useRef<Array<{ name: string; x: number; y: number; radius: number; connections: number }>>([]);
+  const zoomAnimationRef = useRef<number | null>(null);
+
+  // Smooth zoom animation helper
+  const animateBubbleView = useCallback((
+    targetZoom: number,
+    targetPanX?: number,
+    targetPanY?: number,
+    duration = 400
+  ) => {
+    // Cancel any existing animation
+    if (zoomAnimationRef.current) {
+      cancelAnimationFrame(zoomAnimationRef.current);
+    }
+    
+    const startZoom = bubbleZoom;
+    const startPanX = bubblePan.x;
+    const startPanY = bubblePan.y;
+    const finalPanX = targetPanX ?? startPanX;
+    const finalPanY = targetPanY ?? startPanY;
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      
+      // Ease out cubic for smooth deceleration
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      const currentZoom = startZoom + (targetZoom - startZoom) * easeOut;
+      const currentPanX = startPanX + (finalPanX - startPanX) * easeOut;
+      const currentPanY = startPanY + (finalPanY - startPanY) * easeOut;
+      
+      setBubbleZoom(currentZoom);
+      setBubblePan({ x: currentPanX, y: currentPanY });
+      
+      if (progress < 1) {
+        zoomAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        zoomAnimationRef.current = null;
+      }
+    };
+    
+    zoomAnimationRef.current = requestAnimationFrame(animate);
+  }, [bubbleZoom, bubblePan]);
   
   const { messages, loading: chatLoading, ask: askChat, clear: clearChat } = useAIChat();
 
@@ -105,7 +160,7 @@ export default function GlobeView({ relationships, stats }: Props) {
       peopleCount: loc.people.size,
       color: loc.name === 'US Virgin Islands' ? '#dc2626' :
              loc.name === 'New York' ? '#7c3aed' :
-             loc.name === 'Palm Beach' ? '#f59e0b' : '#0ea5e9'
+             loc.name === 'Palm Beach' ? '#f59e0b' : '#dc2626'
     }));
   }, [locationData]);
 
@@ -158,11 +213,11 @@ export default function GlobeView({ relationships, stats }: Props) {
       links.push({ source, target, events });
     });
     
+    // Show ALL nodes, sorted by connections
     const nodes = Array.from(peopleMap.values())
-      .sort((a, b) => b.connections - a.connections)
-      .slice(0, 100);
+      .sort((a, b) => b.connections - a.connections);
     
-    return { nodes, links: links.slice(0, 200) };
+    return { nodes, links };
   }, [unknownLocationData]);
 
   // Get events for selected person in bubble map
@@ -173,9 +228,86 @@ export default function GlobeView({ relationships, stats }: Props) {
     );
   }, [bubbleMapPerson, unknownLocationData]);
 
+  // Initialize bubble map node positions (only once when data changes)
+  useEffect(() => {
+    if (bubbleMapData.nodes.length === 0) return;
+    
+    // Use a larger virtual canvas for layout
+    const layoutWidth = 3000;
+    const layoutHeight = 3000;
+    const centerX = layoutWidth / 2;
+    const centerY = layoutHeight / 2;
+    
+    // Position nodes in a spiral layout for better distribution
+    const nodes = bubbleMapData.nodes.map((node, i) => {
+      const angle = i * 0.5;
+      const spiralRadius = 50 + i * 3;
+      return {
+        name: node.name,
+        connections: node.connections,
+        x: centerX + Math.cos(angle) * spiralRadius,
+        y: centerY + Math.sin(angle) * spiralRadius,
+        radius: Math.min(Math.sqrt(node.connections) * 6 + 8, 35)
+      };
+    });
+    
+    // Force simulation with more iterations for better layout
+    for (let iter = 0; iter < 100; iter++) {
+      // Repulsion between nodes
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const minDist = nodes[i].radius + nodes[j].radius + 15;
+          if (dist < minDist) {
+            const force = (minDist - dist) / dist * 0.3;
+            nodes[i].x -= dx * force;
+            nodes[i].y -= dy * force;
+            nodes[j].x += dx * force;
+            nodes[j].y += dy * force;
+          }
+        }
+      }
+      
+      // Gentle attraction to center
+      nodes.forEach(node => {
+        node.x += (centerX - node.x) * 0.005;
+        node.y += (centerY - node.y) * 0.005;
+      });
+    }
+    
+    bubbleNodesRef.current = nodes;
+  }, [bubbleMapData]);
+
+  // Auto-zoom to person when zoomToPerson changes - with smooth animation
+  useEffect(() => {
+    if (!zoomToPerson || bubbleNodesRef.current.length === 0) return;
+    
+    const node = bubbleNodesRef.current.find(n => n.name === zoomToPerson);
+    if (!node) {
+      setZoomToPerson(null);
+      return;
+    }
+    
+    const canvas = bubbleCanvasRef.current;
+    if (!canvas) {
+      setZoomToPerson(null);
+      return;
+    }
+    
+    const rect = canvas.getBoundingClientRect();
+    const targetZoom = 2.8;
+    const targetPanX = rect.width / 2 - node.x * targetZoom;
+    const targetPanY = rect.height / 2 - node.y * targetZoom;
+    
+    animateBubbleView(targetZoom, targetPanX, targetPanY, 800);
+    setZoomToPerson(null);
+  }, [zoomToPerson, animateBubbleView]);
+
   // Render bubble map
   useEffect(() => {
-    if (!showBubbleMap || !bubbleCanvasRef.current || bubbleMapData.nodes.length === 0) return;
+    if (!showBubbleMap || !bubbleCanvasRef.current || bubbleNodesRef.current.length === 0) return;
     
     const canvas = bubbleCanvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -189,62 +321,17 @@ export default function GlobeView({ relationships, stats }: Props) {
     
     const width = rect.width;
     const height = rect.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    
-    // Position nodes in a force-like layout
-    const nodes = bubbleMapData.nodes.map((node, i) => {
-      const angle = (i / bubbleMapData.nodes.length) * Math.PI * 2;
-      const radius = 150 + Math.random() * 100;
-      return {
-        ...node,
-        x: centerX + Math.cos(angle) * radius,
-        y: centerY + Math.sin(angle) * radius,
-        radius: Math.min(Math.sqrt(node.connections) * 8 + 10, 40)
-      };
-    });
-    
-    // Simple force simulation
-    for (let iter = 0; iter < 50; iter++) {
-      // Repulsion between nodes
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[j].x - nodes[i].x;
-          const dy = nodes[j].y - nodes[i].y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const minDist = nodes[i].radius + nodes[j].radius + 20;
-          if (dist < minDist) {
-            const force = (minDist - dist) / dist * 0.5;
-            nodes[i].x -= dx * force;
-            nodes[i].y -= dy * force;
-            nodes[j].x += dx * force;
-            nodes[j].y += dy * force;
-          }
-        }
-      }
-      
-      // Attraction to center
-      nodes.forEach(node => {
-        node.x += (centerX - node.x) * 0.01;
-        node.y += (centerY - node.y) * 0.01;
-      });
-      
-      // Keep in bounds
-      nodes.forEach(node => {
-        node.x = Math.max(node.radius + 10, Math.min(width - node.radius - 10, node.x));
-        node.y = Math.max(node.radius + 10, Math.min(height - node.radius - 10, node.y));
-      });
-    }
-    
-    // Create node lookup
+    const nodes = bubbleNodesRef.current;
     const nodeMap = new Map(nodes.map(n => [n.name, n]));
     
-    // Draw
-    ctx.clearRect(0, 0, width, height);
+    // Apply transform
+    ctx.save();
+    ctx.translate(bubblePan.x, bubblePan.y);
+    ctx.scale(bubbleZoom, bubbleZoom);
     
     // Draw links
-    ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(220, 38, 38, 0.15)';
+    ctx.lineWidth = 1 / bubbleZoom;
     bubbleMapData.links.forEach(link => {
       const source = nodeMap.get(link.source);
       const target = nodeMap.get(link.target);
@@ -263,63 +350,216 @@ export default function GlobeView({ relationships, stats }: Props) {
       
       // Glow
       ctx.beginPath();
-      ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
+      ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
       ctx.fillStyle = isEpstein ? 'rgba(220, 38, 38, 0.3)' : 
-                      isSelected ? 'rgba(6, 182, 212, 0.4)' : 'rgba(6, 182, 212, 0.15)';
+                      isSelected ? 'rgba(220, 38, 38, 0.5)' : 'rgba(220, 38, 38, 0.1)';
       ctx.fill();
       
       // Circle
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-      ctx.fillStyle = isEpstein ? '#991b1b' : isSelected ? '#0891b2' : '#1e3a5f';
+      ctx.fillStyle = isEpstein ? '#7f1d1d' : isSelected ? '#b91c1c' : '#450a0a';
       ctx.fill();
-      ctx.strokeStyle = isSelected ? '#06b6d4' : isEpstein ? '#dc2626' : '#0e7490';
-      ctx.lineWidth = isSelected ? 3 : 2;
+      ctx.strokeStyle = isSelected ? '#ef4444' : isEpstein ? '#fca5a5' : '#991b1b';
+      ctx.lineWidth = (isSelected ? 3 : 2) / bubbleZoom;
       ctx.stroke();
       
-      // Label
-      ctx.font = `${isSelected ? 'bold ' : ''}${node.radius > 20 ? 11 : 9}px system-ui, sans-serif`;
+      // Label (scale font based on zoom)
+      const fontSize = Math.max(8, Math.min(12, 10 / Math.sqrt(bubbleZoom)));
+      ctx.font = `${isSelected ? 'bold ' : ''}${fontSize}px system-ui, sans-serif`;
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      const name = node.name.length > 15 ? node.name.slice(0, 14) + '...' : node.name;
+      const maxLen = Math.floor(15 * bubbleZoom);
+      const name = node.name.length > maxLen ? node.name.slice(0, maxLen - 1) + '...' : node.name;
       ctx.fillText(name, node.x, node.y);
       
-      // Connection count
-      if (node.radius > 15) {
-        ctx.font = '9px system-ui, sans-serif';
+      // Connection count (show when zoomed in enough)
+      if (bubbleZoom > 0.8) {
+        ctx.font = `${8 / Math.sqrt(bubbleZoom)}px system-ui, sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.fillText(`${node.connections}`, node.x, node.y + node.radius + 12);
+        ctx.fillText(`${node.connections}`, node.x, node.y + node.radius + 10);
       }
     });
     
-    // Handle click
-    const handleClick = (e: MouseEvent) => {
+    ctx.restore();
+    
+    // Draw zoom controls hint
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Zoom: ${Math.round(bubbleZoom * 100)}%`, 10, height - 10);
+    
+  }, [showBubbleMap, bubbleMapData, bubbleMapPerson, bubbleZoom, bubblePan]);
+
+  // Bubble map mouse interactions
+  useEffect(() => {
+    if (!showBubbleMap || !bubbleCanvasRef.current) return;
+    
+    const canvas = bubbleCanvasRef.current;
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
       
-      for (const node of nodes) {
-        const dx = x - node.x;
-        const dy = y - node.y;
+      // Zoom centered on mouse position
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.1, Math.min(5, bubbleZoom * zoomFactor));
+      
+      // Adjust pan to keep mouse position fixed
+      const worldX = (mouseX - bubblePan.x) / bubbleZoom;
+      const worldY = (mouseY - bubblePan.y) / bubbleZoom;
+      const newPanX = mouseX - worldX * newZoom;
+      const newPanY = mouseY - worldY * newZoom;
+      
+      setBubbleZoom(newZoom);
+      setBubblePan({ x: newPanX, y: newPanY });
+    };
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      
+      setBubblePan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    };
+    
+    const handleMouseUp = () => {
+      isDragging = false;
+      canvas.style.cursor = 'grab';
+    };
+    
+    const handleClick = (e: MouseEvent) => {
+      if (isDragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Convert to world coordinates
+      const worldX = (mouseX - bubblePan.x) / bubbleZoom;
+      const worldY = (mouseY - bubblePan.y) / bubbleZoom;
+      
+      // Find clicked node
+      for (const node of bubbleNodesRef.current) {
+        const dx = worldX - node.x;
+        const dy = worldY - node.y;
         if (dx * dx + dy * dy < node.radius * node.radius) {
           setBubbleMapPerson(node.name === bubbleMapPerson ? null : node.name);
           return;
         }
       }
-      setBubbleMapPerson(null);
     };
     
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
     canvas.addEventListener('click', handleClick);
-    return () => canvas.removeEventListener('click', handleClick);
-  }, [showBubbleMap, bubbleMapData, bubbleMapPerson]);
+    canvas.style.cursor = 'grab';
+    
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mouseleave', handleMouseUp);
+      canvas.removeEventListener('click', handleClick);
+    };
+  }, [showBubbleMap, bubbleZoom, bubblePan, bubbleMapPerson]);
 
   // Handle location click from globe
   const handleLocationClick = useCallback((name: string) => {
     setSelectedLocationName(name);
     setSelectedEvent(null);
     setEventAI(null);
+  }, []);
+
+  // Open document modal and fetch content with AI summary
+  const openDocumentModal = useCallback(async (event: Relationship) => {
+    setShowDocumentModal(true);
+    setDocumentText(null);
+    setDocumentMeta(null);
+    setDocumentAI(null);
+    setDocumentLoading(true);
+    setDocumentAILoading(true);
+
+    try {
+      // Fetch document text and metadata in parallel
+      const [textResult, docMeta] = await Promise.all([
+        fetchDocumentText(event.doc_id),
+        fetchDocument(event.doc_id).catch(() => null)
+      ]);
+
+      setDocumentText(textResult.text);
+      setDocumentMeta(docMeta ? {
+        doc_id: docMeta.doc_id,
+        category: docMeta.category,
+        summary: docMeta.one_sentence_summary
+      } : { doc_id: event.doc_id, category: 'Unknown' });
+      setDocumentLoading(false);
+
+      // Now ask AI Epstein to summarize based on document content
+      const key = import.meta.env.VITE_GROQ_API_KEY;
+      if (!key) {
+        setDocumentAI("I have nothing to say without my lawyer present.");
+        setDocumentAILoading(false);
+        return;
+      }
+
+      // Truncate document text to fit in context
+      const truncatedText = textResult.text.slice(0, 8000);
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { 
+              role: 'system', 
+              content: `You are Jeffrey Epstein being interrogated about a specific document. You have READ this document and must base your answers ONLY on what's in it. Be evasive but let details from the document slip out. Speak in first person. Reference specific names, dates, and details FROM THE DOCUMENT. 3-4 sentences.`
+            },
+            { 
+              role: 'user', 
+              content: `Mr. Epstein, we have this document (${event.doc_id}) that mentions "${event.actor} ${event.action} ${event.target}". Here is the full document:\n\n---\n${truncatedText}\n---\n\nWhat can you tell us about this document and what it reveals about your activities?`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 300,
+        }),
+      });
+
+      const data = await response.json();
+      setDocumentAI(data.choices?.[0]?.message?.content || "I don't recall that document.");
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      setDocumentText('Failed to load document content.');
+      setDocumentAI("I'm invoking my Fifth Amendment rights.");
+    } finally {
+      setDocumentLoading(false);
+      setDocumentAILoading(false);
+    }
   }, []);
 
   // Handle chat submit
@@ -382,8 +622,8 @@ export default function GlobeView({ relationships, stats }: Props) {
       <header className="flex-shrink-0 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-cyan-400" />
-            <h1 className="text-white font-semibold">Epstein Network Globe</h1>
+            <img src="/favicon.png" alt="Webstein" className="w-8 h-8" />
+            <h1 className="text-white font-semibold text-lg">Webstein</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-gray-500 text-sm hidden sm:block">
@@ -394,7 +634,7 @@ export default function GlobeView({ relationships, stats }: Props) {
               onClick={() => setShowChatPanel(!showChatPanel)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 showChatPanel 
-                  ? 'bg-cyan-600 text-white' 
+                  ? 'bg-red-600 text-white' 
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
               }`}
             >
@@ -436,7 +676,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                 <span className="text-gray-300">Palm Beach</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-cyan-500"></div>
+                <div className="w-4 h-4 rounded-full bg-red-500"></div>
                 <span className="text-gray-300">Other locations</span>
               </div>
             </div>
@@ -456,20 +696,20 @@ export default function GlobeView({ relationships, stats }: Props) {
                   key={loc.name}
                   onClick={() => handleLocationClick(loc.name)}
                   className={`w-full text-left px-3 py-2 hover:bg-gray-800/80 transition-colors flex items-center justify-between group ${
-                    selectedLocationName === loc.name ? 'bg-cyan-900/30 border-l-2 border-l-cyan-500' : ''
+                    selectedLocationName === loc.name ? 'bg-red-900/30 border-l-2 border-l-red-500' : ''
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${
                       loc.name === 'US Virgin Islands' ? 'bg-red-500' :
                       loc.name === 'New York' ? 'bg-violet-500' :
-                      loc.name === 'Palm Beach' ? 'bg-amber-500' : 'bg-cyan-500'
+                      loc.name === 'Palm Beach' ? 'bg-amber-500' : 'bg-red-500'
                     }`}></div>
                     <span className="text-gray-200 text-sm">{loc.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-gray-500 text-xs">{loc.events.length}</span>
-                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-cyan-400" />
+                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-red-400" />
                   </div>
                 </button>
               ))}
@@ -512,7 +752,7 @@ export default function GlobeView({ relationships, stats }: Props) {
           <div className="w-80 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-cyan-400" />
+                <MessageCircle className="w-5 h-5 text-red-400" />
                 <h2 className="text-white font-semibold">Interrogate Epstein</h2>
               </div>
               <button 
@@ -544,12 +784,12 @@ export default function GlobeView({ relationships, stats }: Props) {
                   key={i}
                   className={`${
                     msg.role === 'user'
-                      ? 'bg-cyan-900/30 border-cyan-800 ml-6'
+                      ? 'bg-red-900/30 border-red-800 ml-6'
                       : 'bg-red-950/30 border-red-900/50 mr-6'
                   } border rounded-lg p-3`}
                 >
                   <div className={`text-xs mb-1 ${
-                    msg.role === 'user' ? 'text-cyan-500' : 'text-red-400'
+                    msg.role === 'user' ? 'text-red-500' : 'text-red-300'
                   }`}>
                     {msg.role === 'user' ? 'Investigator' : 'Epstein'}
                   </div>
@@ -582,13 +822,13 @@ export default function GlobeView({ relationships, stats }: Props) {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Ask a question..."
-                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-500"
                   disabled={chatLoading}
                 />
                 <button
                   type="submit"
                   disabled={chatLoading || !chatInput.trim()}
-                  className="p-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+                  className="p-2 bg-red-600 hover:bg-red-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
                 >
                   <Send className="w-5 h-5 text-white" />
                 </button>
@@ -624,9 +864,9 @@ export default function GlobeView({ relationships, stats }: Props) {
                   <div className="bg-gray-800 rounded-lg p-4 mb-4">
                     <div className="text-xs text-gray-500 uppercase mb-2">Event</div>
                     <div className="text-lg text-white">
-                      <span className="text-cyan-400 font-medium">{selectedEvent.actor}</span>
+                      <span className="text-red-400 font-medium">{selectedEvent.actor}</span>
                       <span className="text-gray-400 mx-2">{selectedEvent.action}</span>
-                      <span className="text-cyan-400 font-medium">{selectedEvent.target}</span>
+                      <span className="text-red-400 font-medium">{selectedEvent.target}</span>
                     </div>
                   </div>
                 </div>
@@ -638,13 +878,14 @@ export default function GlobeView({ relationships, stats }: Props) {
                     <div className="text-xs text-gray-500 uppercase mb-2 flex items-center gap-1">
                       <Users className="w-3 h-3" /> Actor
                     </div>
-                    <div className="text-cyan-400 font-medium text-lg">{selectedEvent.actor}</div>
+                    <div className="text-red-400 font-medium text-lg">{selectedEvent.actor}</div>
                     <button 
                       onClick={() => {
-                        setShowBubbleMap(true);
                         setBubbleMapPerson(selectedEvent.actor);
+                        setZoomToPerson(selectedEvent.actor);
+                        setShowBubbleMap(true);
                       }}
-                      className="text-xs text-gray-500 hover:text-cyan-400 mt-1 flex items-center gap-1"
+                      className="text-xs text-gray-500 hover:text-red-400 mt-1 flex items-center gap-1"
                     >
                       View connections <ArrowRight className="w-3 h-3" />
                     </button>
@@ -661,13 +902,14 @@ export default function GlobeView({ relationships, stats }: Props) {
                     <div className="text-xs text-gray-500 uppercase mb-2 flex items-center gap-1">
                       <Users className="w-3 h-3" /> Target
                     </div>
-                    <div className="text-cyan-400 font-medium text-lg">{selectedEvent.target}</div>
+                    <div className="text-red-400 font-medium text-lg">{selectedEvent.target}</div>
                     <button 
                       onClick={() => {
-                        setShowBubbleMap(true);
                         setBubbleMapPerson(selectedEvent.target);
+                        setZoomToPerson(selectedEvent.target);
+                        setShowBubbleMap(true);
                       }}
-                      className="text-xs text-gray-500 hover:text-cyan-400 mt-1 flex items-center gap-1"
+                      className="text-xs text-gray-500 hover:text-red-400 mt-1 flex items-center gap-1"
                     >
                       View connections <ArrowRight className="w-3 h-3" />
                     </button>
@@ -696,6 +938,13 @@ export default function GlobeView({ relationships, stats }: Props) {
                     </div>
                     <div className="text-white font-mono text-sm">{selectedEvent.doc_id}</div>
                     <div className="text-gray-500 text-xs mt-1">Event ID: {selectedEvent.id}</div>
+                    <button
+                      onClick={() => openDocumentModal(selectedEvent)}
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm transition-colors"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      View Document & AI Summary
+                    </button>
                   </div>
                   
                   {/* Tags */}
@@ -749,7 +998,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                       {selectedLocation.isUnknown ? (
                         <HelpCircle className="w-5 h-5 text-amber-400" />
                       ) : (
-                        <MapPin className="w-5 h-5 text-cyan-400" />
+                        <MapPin className="w-5 h-5 text-red-400" />
                       )}
                       <h2 className="text-xl font-bold text-white">{selectedLocation.name}</h2>
                     </div>
@@ -781,7 +1030,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                         setShowBubbleMap(true);
                         setBubbleMapPerson(null);
                       }}
-                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors"
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
                     >
                       <Network className="w-4 h-4" />
                       View Network Map
@@ -830,12 +1079,12 @@ export default function GlobeView({ relationships, stats }: Props) {
                             <Clock className="w-3 h-3" />
                             {event.timestamp || 'Unknown date'}
                           </span>
-                          <ChevronRight className="w-4 h-4 group-hover:text-cyan-400" />
+                          <ChevronRight className="w-4 h-4 group-hover:text-red-400" />
                         </div>
                         <div className="text-sm">
-                          <span className="text-cyan-400">{event.actor}</span>
+                          <span className="text-red-400">{event.actor}</span>
                           <span className="text-gray-500 mx-1">{event.action}</span>
-                          <span className="text-cyan-400">{event.target}</span>
+                          <span className="text-red-400">{event.target}</span>
                         </div>
                       </button>
                     ))}
@@ -858,21 +1107,50 @@ export default function GlobeView({ relationships, stats }: Props) {
           {/* Header */}
           <div className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Network className="w-5 h-5 text-cyan-400" />
+              <Network className="w-5 h-5 text-red-400" />
               <h2 className="text-white font-semibold">Network Map - Unspecified Locations</h2>
               <span className="text-gray-500 text-sm">
                 {bubbleMapData.nodes.length} people | {bubbleMapData.links.length} connections
               </span>
             </div>
-            <button
-              onClick={() => {
-                setShowBubbleMap(false);
-                setBubbleMapPerson(null);
-              }}
-              className="p-2 text-gray-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1 bg-gray-800 rounded-lg px-2 py-1">
+                <button
+                  onClick={() => animateBubbleView(Math.max(0.1, bubbleZoom * 0.7), undefined, undefined, 250)}
+                  className="px-2 py-1 text-gray-400 hover:text-white text-lg font-bold"
+                >
+                  −
+                </button>
+                <span className="text-gray-400 text-sm w-16 text-center">{Math.round(bubbleZoom * 100)}%</span>
+                <button
+                  onClick={() => animateBubbleView(Math.min(5, bubbleZoom * 1.4), undefined, undefined, 250)}
+                  className="px-2 py-1 text-gray-400 hover:text-white text-lg font-bold"
+                >
+                  +
+                </button>
+              </div>
+              <button
+                onClick={() => animateBubbleView(1, 0, 0, 500)}
+                className="px-3 py-1.5 bg-gray-800 text-gray-400 hover:text-white rounded-lg text-sm"
+              >
+                Reset View
+              </button>
+              <button
+                onClick={() => {
+                  if (zoomAnimationRef.current) {
+                    cancelAnimationFrame(zoomAnimationRef.current);
+                  }
+                  setShowBubbleMap(false);
+                  setBubbleMapPerson(null);
+                  setBubbleZoom(1);
+                  setBubblePan({ x: 0, y: 0 });
+                }}
+                className="p-2 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Content */}
@@ -881,10 +1159,10 @@ export default function GlobeView({ relationships, stats }: Props) {
             <div className="flex-1 relative">
               <canvas 
                 ref={bubbleCanvasRef}
-                className="w-full h-full cursor-pointer"
+                className="w-full h-full"
               />
               <div className="absolute bottom-4 left-4 bg-gray-900/90 rounded-lg p-3 text-xs text-gray-400">
-                Click on a person to see their events
+                <div>Scroll to zoom | Drag to pan | Click on a person to see events</div>
               </div>
             </div>
             
@@ -915,11 +1193,11 @@ export default function GlobeView({ relationships, stats }: Props) {
                       >
                         {/* Event Header */}
                         <div className="text-sm mb-2">
-                          <span className={event.actor === bubbleMapPerson ? 'text-cyan-400 font-medium' : 'text-gray-300'}>
+                          <span className={event.actor === bubbleMapPerson ? 'text-red-400 font-medium' : 'text-gray-300'}>
                             {event.actor}
                           </span>
                           <span className="text-gray-500 mx-1">{event.action}</span>
-                          <span className={event.target === bubbleMapPerson ? 'text-cyan-400 font-medium' : 'text-gray-300'}>
+                          <span className={event.target === bubbleMapPerson ? 'text-red-400 font-medium' : 'text-gray-300'}>
                             {event.target}
                           </span>
                         </div>
@@ -961,6 +1239,86 @@ export default function GlobeView({ relationships, stats }: Props) {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Document Modal */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-gray-700 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5 text-red-400" />
+                <div>
+                  <h2 className="text-white font-semibold">Document Analysis</h2>
+                  {documentMeta && (
+                    <div className="text-gray-500 text-sm">{documentMeta.doc_id} • {documentMeta.category}</div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDocumentModal(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* AI Epstein Summary */}
+            <div className="p-4 border-b border-gray-800 bg-red-950/30">
+              <div className="flex items-center gap-2 text-xs text-red-400 mb-2">
+                <MessageCircle className="w-4 h-4" />
+                Epstein's Response (based on document)
+              </div>
+              {documentAILoading ? (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="italic">Reading document...</span>
+                </div>
+              ) : documentAI ? (
+                <p className="text-gray-200 italic leading-relaxed">"{documentAI}"</p>
+              ) : (
+                <p className="text-gray-500 italic">No response available</p>
+              )}
+            </div>
+
+            {/* Document Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="text-xs text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <FileText className="w-3 h-3" />
+                Document Content
+              </div>
+              {documentLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-red-400 mx-auto mb-2" />
+                    <div className="text-gray-500 text-sm">Loading document...</div>
+                  </div>
+                </div>
+              ) : documentText ? (
+                <div className="bg-gray-950 rounded-lg p-4 border border-gray-800">
+                  <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono leading-relaxed max-h-[400px] overflow-y-auto">
+                    {documentText}
+                  </pre>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center py-8">
+                  Document content unavailable
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-800 flex justify-end">
+              <button
+                onClick={() => setShowDocumentModal(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

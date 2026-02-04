@@ -431,7 +431,7 @@ export default function RotatingEarth({
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-950/80 rounded-2xl z-10">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-gray-400 text-sm">Loading world map...</p>
           </div>
         </div>
