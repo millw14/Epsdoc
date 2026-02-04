@@ -1,12 +1,8 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "git-lfs"]
+nixPkgs = ["nodejs_20", "curl"]
 
 [phases.install]
-cmds = [
-  "git lfs install",
-  "git lfs pull",
-  "npm install"
-]
+cmds = ["npm install"]
 
 [phases.build]
 cmds = ["bash build.sh"]
