@@ -8,4 +8,4 @@ cmds = ["npm install"]
 cmds = ["bash build.sh"]
 
 [start]
-cmd = "node --loader tsx api_server.ts"
+cmd = "node --import tsx api_server.ts"

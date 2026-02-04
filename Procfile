@@ -1,1 +1,1 @@
-web: node --loader tsx api_server.ts
+web: node --import tsx api_server.ts
