@@ -487,6 +487,54 @@ export default function GlobeView({ relationships, stats }: Props) {
     };
   }, [showBubbleMap, bubbleZoom, bubblePan, bubbleMapPerson]);
 
+  // Keyboard navigation for bubble map
+  useEffect(() => {
+    if (!showBubbleMap) return;
+    
+    const PAN_SPEED = 50;
+    const ZOOM_FACTOR = 1.2;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent default for navigation keys
+      if (['w', 's', 'a', 'd', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+      }
+      
+      switch (e.key.toLowerCase()) {
+        case 'w':
+          // Pan up
+          setBubblePan(prev => ({ x: prev.x, y: prev.y + PAN_SPEED }));
+          break;
+        case 's':
+          // Pan down
+          setBubblePan(prev => ({ x: prev.x, y: prev.y - PAN_SPEED }));
+          break;
+        case 'a':
+          // Pan left
+          setBubblePan(prev => ({ x: prev.x + PAN_SPEED, y: prev.y }));
+          break;
+        case 'd':
+          // Pan right
+          setBubblePan(prev => ({ x: prev.x - PAN_SPEED, y: prev.y }));
+          break;
+        case 'arrowup':
+          // Zoom in
+          setBubbleZoom(prev => Math.min(5, prev * ZOOM_FACTOR));
+          break;
+        case 'arrowdown':
+          // Zoom out
+          setBubbleZoom(prev => Math.max(0.1, prev / ZOOM_FACTOR));
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showBubbleMap]);
+
   // Handle location click from globe
   const handleLocationClick = useCallback((name: string) => {
     setSelectedLocationName(name);
@@ -1144,8 +1192,27 @@ export default function GlobeView({ relationships, stats }: Props) {
                 ref={bubbleCanvasRef}
                 className="w-full h-full bg-dark-900"
               />
-              <div className="absolute bottom-6 left-6 bg-dark-800 px-4 py-3 border-l-2 border-l-brand-red">
-                <div className="text-sm text-txt-light">Scroll: zoom | Drag: pan | Click: select</div>
+              {/* Controls legend */}
+              <div className="absolute bottom-6 left-6 bg-dark-800 px-5 py-4 border-l-2 border-l-brand-red">
+                <div className="text-xs text-brand-red uppercase tracking-wide mb-3">Controls</div>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-txt-dim">Navigate:</span>
+                    <span className="text-white font-mono">W A S D</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-txt-dim">Zoom:</span>
+                    <span className="text-white font-mono">↑ ↓</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-txt-dim">Pan:</span>
+                    <span className="text-white">Drag mouse</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-txt-dim">Select:</span>
+                    <span className="text-white">Click node</span>
+                  </div>
+                </div>
               </div>
             </div>
             
