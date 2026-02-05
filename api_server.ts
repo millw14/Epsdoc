@@ -691,6 +691,165 @@ app.get('/api/search', (req, res) => {
   }
 });
 
+// Deep search across entire database - for AI queries
+app.get('/api/deep-search', (req, res) => {
+  try {
+    const query = req.query.q as string;
+    const thorough = req.query.thorough === 'true'; // Enable thorough mode for more results
+    
+    if (!query || query.length < 2) {
+      return res.json({ events: [], documents: [], actors: [], excerpts: [] });
+    }
+
+    const searchTerm = `%${query}%`;
+    const eventLimit = thorough ? 100 : 50;
+    const docLimit = thorough ? 50 : 20;
+    
+    // Search events (rdf_triples) - actions, actors, targets, locations
+    const events = db.prepare(`
+      SELECT 
+        rt.id,
+        rt.doc_id,
+        rt.timestamp,
+        COALESCE(ea_actor.canonical_name, rt.actor) as actor,
+        rt.action,
+        COALESCE(ea_target.canonical_name, rt.target) as target,
+        rt.location,
+        rt.triple_tags,
+        rt.explicit_topic,
+        rt.implicit_topic
+      FROM rdf_triples rt
+      LEFT JOIN entity_aliases ea_actor ON rt.actor = ea_actor.original_name
+      LEFT JOIN entity_aliases ea_target ON rt.target = ea_target.original_name
+      WHERE rt.action LIKE ? 
+         OR rt.actor LIKE ? 
+         OR rt.target LIKE ?
+         OR rt.location LIKE ?
+         OR rt.doc_id LIKE ?
+         OR rt.triple_tags LIKE ?
+         OR rt.explicit_topic LIKE ?
+         OR rt.implicit_topic LIKE ?
+      ORDER BY rt.timestamp DESC
+      LIMIT ?
+    `).all(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, eventLimit) as Array<{
+      id: number;
+      doc_id: string;
+      timestamp: string | null;
+      actor: string;
+      action: string;
+      target: string;
+      location: string | null;
+      triple_tags: string | null;
+      explicit_topic: string | null;
+      implicit_topic: string | null;
+    }>;
+
+    // Search document full text - get more context around matches
+    const documents = db.prepare(`
+      SELECT 
+        doc_id,
+        category,
+        one_sentence_summary,
+        paragraph_summary,
+        full_text
+      FROM documents
+      WHERE full_text LIKE ?
+         OR doc_id LIKE ?
+         OR one_sentence_summary LIKE ?
+         OR paragraph_summary LIKE ?
+      LIMIT ?
+    `).all(searchTerm, searchTerm, searchTerm, searchTerm, docLimit) as Array<{
+      doc_id: string;
+      category: string;
+      one_sentence_summary: string | null;
+      paragraph_summary: string | null;
+      full_text: string | null;
+    }>;
+
+    // Extract relevant excerpts from full text where the search term appears
+    const excerpts: Array<{ doc_id: string; context: string }> = [];
+    const queryLower = query.toLowerCase();
+    
+    for (const doc of documents) {
+      if (doc.full_text) {
+        const textLower = doc.full_text.toLowerCase();
+        let idx = textLower.indexOf(queryLower);
+        let excerptCount = 0;
+        
+        // Find up to 3 occurrences in each document
+        while (idx !== -1 && excerptCount < 3) {
+          // Get context around the match (200 chars before, 300 after)
+          const start = Math.max(0, idx - 200);
+          const end = Math.min(doc.full_text.length, idx + query.length + 300);
+          let context = doc.full_text.substring(start, end);
+          
+          // Clean up and add ellipsis
+          if (start > 0) context = '...' + context;
+          if (end < doc.full_text.length) context = context + '...';
+          
+          excerpts.push({
+            doc_id: doc.doc_id,
+            context: context.replace(/\s+/g, ' ').trim()
+          });
+          
+          excerptCount++;
+          idx = textLower.indexOf(queryLower, idx + 1);
+        }
+      }
+    }
+
+    // Search actors/people
+    const actors = db.prepare(`
+      SELECT DISTINCT
+        COALESCE(ea.canonical_name, rt.actor) as name,
+        COUNT(*) as connection_count
+      FROM rdf_triples rt
+      LEFT JOIN entity_aliases ea ON rt.actor = ea.original_name
+      WHERE rt.actor LIKE ? OR rt.target LIKE ?
+      GROUP BY COALESCE(ea.canonical_name, rt.actor)
+      ORDER BY connection_count DESC
+      LIMIT 30
+    `).all(searchTerm, searchTerm) as Array<{
+      name: string;
+      connection_count: number;
+    }>;
+
+    // Format events with parsed tags
+    const formattedEvents = events.map(e => ({
+      id: e.id,
+      doc_id: e.doc_id,
+      timestamp: e.timestamp,
+      actor: e.actor,
+      action: e.action,
+      target: e.target,
+      location: e.location,
+      tags: e.triple_tags ? JSON.parse(e.triple_tags) : [],
+      explicit_topic: e.explicit_topic,
+      implicit_topic: e.implicit_topic
+    }));
+
+    // Format documents (without full text to reduce payload)
+    const formattedDocs = documents.map(d => ({
+      doc_id: d.doc_id,
+      category: d.category,
+      one_sentence_summary: d.one_sentence_summary,
+      paragraph_summary: d.paragraph_summary
+    }));
+
+    res.json({
+      events: formattedEvents,
+      documents: formattedDocs,
+      actors,
+      excerpts, // New: actual text excerpts showing the search term in context
+      query,
+      totalExcerpts: excerpts.length
+    });
+  } catch (error) {
+    console.error('Error in /api/deep-search:', error);
+    res.status(500).json({ error: 'An internal error occurred' });
+  }
+});
+
 // Get total relationship counts for top N actors (unfiltered totals)
 app.get('/api/actor-counts', (req, res) => {
   try {

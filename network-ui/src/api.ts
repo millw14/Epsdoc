@@ -97,3 +97,43 @@ export async function fetchActorCount(name: string): Promise<number> {
   const data = await response.json();
   return data.count;
 }
+
+// Deep search - searches across all documents, events, and actors
+export interface DeepSearchResult {
+  events: Array<{
+    id: number;
+    doc_id: string;
+    timestamp: string | null;
+    actor: string;
+    action: string;
+    target: string;
+    location: string | null;
+    tags: string[];
+    explicit_topic?: string | null;
+    implicit_topic?: string | null;
+  }>;
+  documents: Array<{
+    doc_id: string;
+    category: string;
+    one_sentence_summary: string | null;
+    paragraph_summary: string | null;
+  }>;
+  actors: Array<{
+    name: string;
+    connection_count: number;
+  }>;
+  excerpts: Array<{
+    doc_id: string;
+    context: string;
+  }>;
+  query: string;
+  totalExcerpts: number;
+}
+
+export async function deepSearch(query: string, thorough: boolean = false): Promise<DeepSearchResult> {
+  const params = new URLSearchParams({ q: query });
+  if (thorough) params.append('thorough', 'true');
+  const response = await fetch(`${API_BASE}/deep-search?${params}`);
+  if (!response.ok) throw new Error('Failed to perform deep search');
+  return response.json();
+}
