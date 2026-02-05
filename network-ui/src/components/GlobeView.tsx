@@ -8,7 +8,7 @@ import { getLocationCoords, normalizeLocation } from '../lib/locations';
 import GlobeGL from './ui/GlobeGL';
 import { useAIChat } from '../lib/ai-explanations';
 import { fetchDocumentText, fetchDocument } from '../api';
-import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2, Menu } from 'lucide-react';
+import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2, Menu, Twitter } from 'lucide-react';
 
 interface Props {
   relationships: Relationship[];
@@ -714,6 +714,17 @@ export default function GlobeView({ relationships, stats }: Props) {
             <div className="text-white text-xs bg-dark-800/95 px-4 py-2 border-l-2 border-l-dark-500 hidden md:block tracking-wide">
               <span className="text-brand-red">{locationData.length}</span> locations <span className="text-txt-dim">|</span> <span className="text-brand-red">{totalLocatedEvents.toLocaleString()}</span> events
             </div>
+            {/* Twitter/X Link */}
+            <a
+              href="https://x.com/websteindotfun"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-3 py-2 bg-dark-800/95 text-white hover:bg-dark-700 transition-all border-l-2 border-l-dark-500 hover:border-l-brand-red"
+              title="Follow @websteindotfun"
+            >
+              <Twitter className="w-4 h-4 group-hover:text-brand-red transition-colors" />
+              <span className="hidden lg:inline text-xs tracking-wide group-hover:text-brand-red transition-colors">@websteindotfun</span>
+            </a>
             <button
               onClick={() => setShowChatPanel(!showChatPanel)}
               className={`flex items-center gap-2 px-4 py-2 text-xs tracking-wide transition-all ${
