@@ -632,7 +632,7 @@ export default function GlobeView({ relationships, stats }: Props) {
   }, []);
 
   return (
-    <div className="h-screen bg-ink-950 relative overflow-hidden font-mono">
+    <div className="h-screen bg-dark-900 relative overflow-hidden font-mono">
       {/* Fullscreen Globe */}
       <div className="absolute inset-0">
         <GlobeGL
@@ -646,32 +646,32 @@ export default function GlobeView({ relationships, stats }: Props) {
         />
       </div>
 
-      {/* Top Bar - Clean minimal header */}
+      {/* Top Bar - Red and black */}
       <header className="absolute top-0 left-0 right-0 z-20 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Menu Toggle */}
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 bg-ink-900/95 hover:bg-ink-800 text-ink-400 hover:text-white transition-all duration-200 border-b border-ink-700"
+              className="p-2 bg-dark-800/95 hover:bg-dark-700 text-white transition-all border-l-2 border-l-brand-red"
             >
               {showMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <div className="flex items-center gap-2 bg-ink-900/95 px-4 py-2 border-b border-accent-red">
+            <div className="flex items-center gap-2 bg-dark-800/95 px-4 py-2 border-l-2 border-l-brand-red">
               <img src="/favicon.png" alt="Webstein" className="w-5 h-5" />
               <h1 className="text-white text-sm font-medium tracking-wider uppercase">Webstein</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-ink-400 text-xs bg-ink-900/95 px-4 py-2 border-b border-ink-700 hidden md:block tracking-wide">
-              <span className="text-ink-500">//</span> {locationData.length} locations <span className="text-ink-600">|</span> {totalLocatedEvents.toLocaleString()} events
+            <div className="text-white text-xs bg-dark-800/95 px-4 py-2 border-l-2 border-l-dark-500 hidden md:block tracking-wide">
+              <span className="text-brand-red">{locationData.length}</span> locations <span className="text-txt-dim">|</span> <span className="text-brand-red">{totalLocatedEvents.toLocaleString()}</span> events
             </div>
             <button
               onClick={() => setShowChatPanel(!showChatPanel)}
-              className={`flex items-center gap-2 px-4 py-2 text-xs tracking-wide transition-all duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs tracking-wide transition-all ${
                 showChatPanel 
-                  ? 'bg-accent-red text-white border-b-2 border-white' 
-                  : 'bg-ink-900/95 text-ink-400 hover:text-white border-b border-ink-700 hover:border-accent-red'
+                  ? 'bg-brand-red text-white' 
+                  : 'bg-dark-800/95 text-white hover:bg-brand-dark border-l-2 border-l-dark-500 hover:border-l-brand-red'
               }`}
             >
               <MessageCircle className="w-3.5 h-3.5" />
@@ -681,82 +681,82 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
       </header>
 
-      {/* Left Sidebar - Clean document list */}
+      {/* Left Sidebar - Red/Black theme */}
       <div className={`absolute left-0 top-14 bottom-0 z-10 transition-transform duration-300 ${showMenu ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-full w-64 bg-ink-900/98 backdrop-blur-sm border-r border-ink-800 flex flex-col">
+        <div className="h-full w-64 bg-dark-800/98 backdrop-blur-sm border-r border-dark-500 flex flex-col">
           {/* Locations List Header */}
-          <div className="px-4 py-3 border-b border-ink-800">
-            <div className="text-[10px] text-ink-500 uppercase tracking-widest font-medium">// Index</div>
+          <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50">
+            <div className="text-xs text-brand-red uppercase tracking-widest font-medium">Index</div>
           </div>
           <div className="flex-1 overflow-y-auto">
             {locationData.map((loc, index) => (
               <button
                 key={loc.name}
                 onClick={() => handleLocationClick(loc.name)}
-                className={`w-full text-left px-4 py-2.5 transition-all duration-200 flex items-center justify-between group border-l-2 ${
+                className={`w-full text-left px-4 py-2.5 transition-all flex items-center justify-between group border-l-2 ${
                   selectedLocationName === loc.name 
-                    ? 'bg-ink-800/50 border-l-accent-red text-white' 
-                    : 'border-l-transparent hover:border-l-ink-600 hover:bg-ink-800/30 text-ink-300'
+                    ? 'bg-brand-dark/30 border-l-brand-red text-white' 
+                    : 'border-l-transparent hover:border-l-brand-red hover:bg-dark-700/50 text-txt-light'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] text-ink-600 font-mono w-4">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-[10px] text-brand-red font-mono w-4">{String(index + 1).padStart(2, '0')}</span>
                   <span className="text-xs tracking-wide truncate">{loc.name}</span>
                 </div>
-                <span className="text-[10px] text-ink-500 font-mono">{loc.events.length}</span>
+                <span className="text-xs text-txt-muted font-mono">{loc.events.length}</span>
               </button>
             ))}
             
             {/* Unknown/Unmapped events */}
             {unknownLocationData && (
               <>
-                <div className="border-t border-ink-800/50 my-1 mx-4"></div>
+                <div className="border-t border-dark-500 my-1 mx-4"></div>
                 <button
                   onClick={() => handleLocationClick('Unknown/Unspecified')}
-                  className={`w-full text-left px-4 py-2.5 transition-all duration-200 flex items-center justify-between group border-l-2 ${
+                  className={`w-full text-left px-4 py-2.5 transition-all flex items-center justify-between group border-l-2 ${
                     selectedLocationName === 'Unknown/Unspecified' 
-                      ? 'bg-ink-800/50 border-l-amber-600 text-white' 
-                      : 'border-l-transparent hover:border-l-ink-600 hover:bg-ink-800/30 text-ink-400'
+                      ? 'bg-brand-dark/30 border-l-brand-light text-white' 
+                      : 'border-l-transparent hover:border-l-brand-red hover:bg-dark-700/50 text-txt-light'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-amber-600 font-mono">??</span>
+                    <span className="text-[10px] text-brand-light font-mono">??</span>
                     <span className="text-xs tracking-wide">Unspecified</span>
                   </div>
-                  <span className="text-[10px] text-ink-500 font-mono">{unknownLocationData.events.length}</span>
+                  <span className="text-xs text-txt-muted font-mono">{unknownLocationData.events.length}</span>
                 </button>
               </>
             )}
           </div>
           
           {/* Footer stats */}
-          <div className="px-4 py-3 border-t border-ink-800 bg-ink-900/50">
-            <div className="text-[10px] text-ink-600 tracking-wide">
-              <span className="text-ink-500">&gt;</span> {locationData.length} locations indexed
+          <div className="px-4 py-3 border-t border-dark-500 bg-dark-700/50">
+            <div className="text-xs text-txt-muted tracking-wide">
+              <span className="text-brand-red">{locationData.length}</span> locations indexed
             </div>
           </div>
         </div>
       </div>
 
-      {/* Hover tooltip - minimal */}
+      {/* Hover tooltip */}
       {hoveredLocation && !selectedLocation && (
-        <div className="absolute top-20 right-4 z-20 bg-ink-900/98 backdrop-blur-sm px-4 py-2 border-l-2 border-l-accent-red">
-          <div className="text-white text-xs tracking-wide">{hoveredLocation}</div>
-          <div className="text-ink-500 text-[10px] tracking-wider uppercase mt-0.5">Click to expand</div>
+        <div className="absolute top-20 right-4 z-20 bg-dark-800/98 backdrop-blur-sm px-4 py-2 border-l-2 border-l-brand-red">
+          <div className="text-white text-sm">{hoveredLocation}</div>
+          <div className="text-txt-muted text-xs mt-0.5">Click to expand</div>
         </div>
       )}
 
-      {/* AI Chat Panel - Typewriter style */}
+      {/* AI Chat Panel - Red/Black theme */}
       {showChatPanel && (
-        <div className="absolute right-0 top-14 bottom-0 z-10 w-80 bg-ink-900/98 backdrop-blur-sm border-l border-ink-800 flex flex-col">
-            <div className="px-4 py-3 border-b border-ink-800 flex items-center justify-between">
+        <div className="absolute right-0 top-14 bottom-0 z-10 w-80 bg-dark-800/98 backdrop-blur-sm border-l border-dark-500 flex flex-col">
+            <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-accent-red text-xs">&gt;</span>
-                <h2 className="text-white text-xs tracking-wider uppercase">Interrogation_Log</h2>
+                <span className="text-brand-red">&gt;</span>
+                <h2 className="text-white text-sm uppercase tracking-wide">Interrogation</h2>
               </div>
               <button 
                 onClick={() => setShowChatPanel(false)}
-                className="p-1 text-ink-500 hover:text-white transition-colors"
+                className="p-1 text-txt-muted hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -766,11 +766,11 @@ export default function GlobeView({ relationships, stats }: Props) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.length === 0 && (
                 <div className="py-6">
-                  <div className="text-ink-600 text-[10px] uppercase tracking-widest mb-4 text-center">// Begin interrogation</div>
-                  <div className="space-y-2 text-xs text-ink-500">
-                    <p className="border-l border-ink-700 pl-3">"What happened in New York?"</p>
-                    <p className="border-l border-ink-700 pl-3">"Tell me about Palm Beach"</p>
-                    <p className="border-l border-ink-700 pl-3">"Who did you meet on the island?"</p>
+                  <div className="text-txt-dim text-xs uppercase tracking-wider mb-4 text-center">Begin interrogation</div>
+                  <div className="space-y-3 text-sm text-txt-muted">
+                    <p className="border-l-2 border-l-dark-500 pl-3 hover:border-l-brand-red transition-colors">"What happened in New York?"</p>
+                    <p className="border-l-2 border-l-dark-500 pl-3 hover:border-l-brand-red transition-colors">"Tell me about Palm Beach"</p>
+                    <p className="border-l-2 border-l-dark-500 pl-3 hover:border-l-brand-red transition-colors">"Who did you meet on the island?"</p>
                   </div>
                 </div>
               )}
@@ -780,17 +780,17 @@ export default function GlobeView({ relationships, stats }: Props) {
                   key={i}
                   className={`${
                     msg.role === 'user'
-                      ? 'ml-4 border-l-2 border-l-ink-600'
-                      : 'mr-4 border-l-2 border-l-accent-red bg-ink-800/30'
+                      ? 'ml-4 border-l-2 border-l-dark-400'
+                      : 'mr-4 border-l-2 border-l-brand-red bg-brand-dark/20'
                   } pl-3 py-2`}
                 >
-                  <div className={`text-[10px] mb-1 tracking-wider uppercase ${
-                    msg.role === 'user' ? 'text-ink-500' : 'text-accent-red'
+                  <div className={`text-xs mb-1 uppercase tracking-wide ${
+                    msg.role === 'user' ? 'text-txt-muted' : 'text-brand-red'
                   }`}>
-                    {msg.role === 'user' ? '> Investigator' : '> Subject'}
+                    {msg.role === 'user' ? 'Investigator' : 'Subject'}
                   </div>
-                  <p className={`text-xs leading-relaxed ${
-                    msg.role === 'user' ? 'text-ink-200' : 'text-ink-300 italic'
+                  <p className={`text-sm leading-relaxed ${
+                    msg.role === 'user' ? 'text-white' : 'text-txt-light italic'
                   }`}>
                     {msg.role === 'assistant' ? `"${msg.content}"` : msg.content}
                   </p>
@@ -798,10 +798,11 @@ export default function GlobeView({ relationships, stats }: Props) {
               ))}
               
               {chatLoading && (
-                <div className="mr-4 border-l-2 border-l-accent-red bg-ink-800/30 pl-3 py-2">
-                  <div className="text-[10px] text-accent-red tracking-wider uppercase mb-1">&gt; Subject</div>
-                  <div className="flex items-center gap-2 text-ink-500 text-xs">
-                    <span className="cursor-blink">Processing</span>
+                <div className="mr-4 border-l-2 border-l-brand-red bg-brand-dark/20 pl-3 py-2">
+                  <div className="text-xs text-brand-red uppercase tracking-wide mb-1">Subject</div>
+                  <div className="flex items-center gap-2 text-txt-muted text-sm">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Processing...</span>
                   </div>
                 </div>
               )}
@@ -810,58 +811,58 @@ export default function GlobeView({ relationships, stats }: Props) {
             </div>
             
             {/* Chat input */}
-            <form onSubmit={handleChatSubmit} className="p-4 border-t border-ink-800">
+            <form onSubmit={handleChatSubmit} className="p-4 border-t border-dark-500">
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Enter query..."
-                  className="flex-1 bg-ink-800/50 border-b border-ink-700 px-3 py-2 text-white text-xs tracking-wide placeholder-ink-600 focus:outline-none focus:border-accent-red transition-colors"
+                  className="flex-1 bg-dark-700 border border-dark-500 px-3 py-2 text-white text-sm placeholder-txt-dim focus:outline-none focus:border-brand-red transition-colors"
                   disabled={chatLoading}
                 />
                 <button
                   type="submit"
                   disabled={chatLoading || !chatInput.trim()}
-                  className="px-3 py-2 bg-accent-red hover:bg-red-600 disabled:bg-ink-700 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 bg-brand-red hover:bg-brand-light disabled:bg-dark-600 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Send className="w-3.5 h-3.5 text-white" />
+                  <Send className="w-4 h-4 text-white" />
                 </button>
               </div>
               {messages.length > 0 && (
                 <button
                   type="button"
                   onClick={clearChat}
-                  className="text-[10px] text-ink-600 hover:text-ink-400 mt-2 tracking-wide"
+                  className="text-xs text-txt-dim hover:text-brand-red mt-2"
                 >
-                  // Clear log
+                  Clear log
                 </button>
               )}
             </form>
           </div>
         )}
 
-      {/* Detail Panel - Clean document style */}
+      {/* Detail Panel - Red/Black theme */}
       {selectedLocation && (
-        <div className="absolute right-0 top-14 bottom-0 z-20 w-96 bg-ink-900/98 backdrop-blur-sm border-l border-ink-800 flex flex-col">
+        <div className="absolute right-0 top-14 bottom-0 z-20 w-96 bg-dark-800/98 backdrop-blur-sm border-l border-dark-500 flex flex-col">
             {selectedEvent ? (
-              /* Event Detail - Dossier style */
+              /* Event Detail */
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b border-ink-800 flex-shrink-0">
+                <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50 flex-shrink-0">
                   <button 
                     onClick={() => setSelectedEvent(null)}
-                    className="flex items-center gap-1 text-ink-500 hover:text-white text-[10px] tracking-wider uppercase mb-3 transition-colors"
+                    className="flex items-center gap-1 text-txt-muted hover:text-white text-xs mb-3 transition-colors"
                   >
-                    <ChevronLeft className="w-3 h-3" /> Back
+                    <ChevronLeft className="w-4 h-4" /> Back
                   </button>
                   
                   {/* Event Title */}
-                  <div className="border-l-2 border-l-accent-red pl-3 py-2">
-                    <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-2">// Event Record</div>
-                    <div className="text-sm text-ink-100 leading-relaxed">
-                      <span className="text-accent-glow">{selectedEvent.actor}</span>
-                      <span className="text-ink-500 mx-1.5">{selectedEvent.action}</span>
-                      <span className="text-accent-glow">{selectedEvent.target}</span>
+                  <div className="border-l-2 border-l-brand-red pl-3 py-2">
+                    <div className="text-xs text-brand-red uppercase tracking-wide mb-2">Event Record</div>
+                    <div className="text-sm text-white leading-relaxed">
+                      <span className="text-brand-light">{selectedEvent.actor}</span>
+                      <span className="text-txt-muted mx-1.5">{selectedEvent.action}</span>
+                      <span className="text-brand-light">{selectedEvent.target}</span>
                     </div>
                   </div>
                 </div>
@@ -869,91 +870,91 @@ export default function GlobeView({ relationships, stats }: Props) {
                 {/* Full Event Details */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {/* Actor Info */}
-                  <div className="border-l border-ink-700 pl-3 py-2">
-                    <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-1">Subject_A</div>
-                    <div className="text-accent-glow text-sm">{selectedEvent.actor}</div>
+                  <div className="border-l-2 border-l-dark-500 pl-3 py-2 hover:border-l-brand-red transition-colors">
+                    <div className="text-xs text-txt-muted uppercase tracking-wide mb-1">Subject A</div>
+                    <div className="text-brand-light text-base font-medium">{selectedEvent.actor}</div>
                     <button 
                       onClick={() => {
                         setBubbleMapPerson(selectedEvent.actor);
                         setZoomToPerson(selectedEvent.actor);
                         setShowBubbleMap(true);
                       }}
-                      className="text-[10px] text-ink-500 hover:text-accent-red mt-1 flex items-center gap-1 transition-colors"
+                      className="text-xs text-txt-dim hover:text-brand-red mt-1 flex items-center gap-1 transition-colors"
                     >
-                      &gt; View network <ArrowRight className="w-2.5 h-2.5" />
+                      View network <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                   
                   {/* Action */}
-                  <div className="border-l border-ink-700 pl-3 py-2">
-                    <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-1">Action</div>
-                    <div className="text-ink-200 text-xs leading-relaxed">{selectedEvent.action}</div>
+                  <div className="border-l-2 border-l-dark-500 pl-3 py-2">
+                    <div className="text-xs text-txt-muted uppercase tracking-wide mb-1">Action</div>
+                    <div className="text-white text-sm leading-relaxed">{selectedEvent.action}</div>
                   </div>
                   
                   {/* Target Info */}
-                  <div className="border-l border-ink-700 pl-3 py-2">
-                    <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-1">Subject_B</div>
-                    <div className="text-accent-glow text-sm">{selectedEvent.target}</div>
+                  <div className="border-l-2 border-l-dark-500 pl-3 py-2 hover:border-l-brand-red transition-colors">
+                    <div className="text-xs text-txt-muted uppercase tracking-wide mb-1">Subject B</div>
+                    <div className="text-brand-light text-base font-medium">{selectedEvent.target}</div>
                     <button 
                       onClick={() => {
                         setBubbleMapPerson(selectedEvent.target);
                         setZoomToPerson(selectedEvent.target);
                         setShowBubbleMap(true);
                       }}
-                      className="text-[10px] text-ink-500 hover:text-accent-red mt-1 flex items-center gap-1 transition-colors"
+                      className="text-xs text-txt-dim hover:text-brand-red mt-1 flex items-center gap-1 transition-colors"
                     >
-                      &gt; View network <ArrowRight className="w-2.5 h-2.5" />
+                      View network <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                   
                   {/* Date & Location */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="border-l border-ink-700 pl-3 py-2">
-                      <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-1">Date</div>
-                      <div className="text-ink-200 text-xs font-mono">{selectedEvent.timestamp || '—'}</div>
+                    <div className="border-l-2 border-l-dark-500 pl-3 py-2">
+                      <div className="text-xs text-txt-muted uppercase tracking-wide mb-1">Date</div>
+                      <div className="text-white text-sm font-mono">{selectedEvent.timestamp || '—'}</div>
                     </div>
-                    <div className="border-l border-ink-700 pl-3 py-2">
-                      <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-1">Location</div>
-                      <div className="text-ink-200 text-xs">{selectedEvent.location || '—'}</div>
+                    <div className="border-l-2 border-l-dark-500 pl-3 py-2">
+                      <div className="text-xs text-txt-muted uppercase tracking-wide mb-1">Location</div>
+                      <div className="text-white text-sm">{selectedEvent.location || '—'}</div>
                     </div>
                   </div>
                   
                   {/* Document Reference */}
-                  <div className="bg-ink-800/40 p-3 border-l-2 border-l-ink-600">
-                    <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-2">Document_Ref</div>
-                    <div className="text-ink-300 font-mono text-[11px]">{selectedEvent.doc_id}</div>
-                    <div className="text-ink-600 text-[10px] mt-1">ID: {selectedEvent.id}</div>
+                  <div className="bg-dark-700 p-4 border-l-2 border-l-brand-red">
+                    <div className="text-xs text-brand-red uppercase tracking-wide mb-2">Document</div>
+                    <div className="text-white font-mono text-sm">{selectedEvent.doc_id}</div>
+                    <div className="text-txt-dim text-xs mt-1">ID: {selectedEvent.id}</div>
                     <button
                       onClick={openDocumentModal}
-                      className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-accent-red hover:bg-red-600 text-white text-xs tracking-wide transition-colors"
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-brand-red hover:bg-brand-light text-white text-sm transition-colors"
                     >
                       {documentLoading ? (
                         <>
-                          <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Loading...</span>
                         </>
                       ) : documentAILoading ? (
                         <>
-                          <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Analyzing...</span>
                         </>
                       ) : documentAI ? (
-                        <span>&gt; View Analysis [Ready]</span>
+                        <span>View Analysis [Ready]</span>
                       ) : (
-                        <span>&gt; View Document</span>
+                        <span>View Document</span>
                       )}
                     </button>
                   </div>
                   
                   {/* Tags */}
                   {selectedEvent.tags && selectedEvent.tags.length > 0 && (
-                    <div className="border-l border-ink-700 pl-3 py-2">
-                      <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-2">Tags</div>
+                    <div className="border-l-2 border-l-dark-500 pl-3 py-2">
+                      <div className="text-xs text-txt-muted uppercase tracking-wide mb-2">Tags</div>
                       <div className="flex flex-wrap gap-1">
                         {selectedEvent.tags.map((tag, i) => (
                           <span 
                             key={i}
-                            className="px-2 py-0.5 bg-ink-800 text-ink-400 text-[10px] tracking-wide"
+                            className="px-2 py-1 bg-dark-600 text-txt-light text-xs"
                           >
                             {tag}
                           </span>
@@ -963,18 +964,21 @@ export default function GlobeView({ relationships, stats }: Props) {
                   )}
                   
                   {/* AI Interrogation */}
-                  <div className="bg-ink-800/30 border-l-2 border-l-accent-red p-3">
-                    <div className="text-[10px] text-accent-red uppercase tracking-widest mb-2">&gt; Interrogation</div>
+                  <div className="bg-brand-dark/30 border-l-2 border-l-brand-red p-4">
+                    <div className="text-xs text-brand-red uppercase tracking-wide mb-2">Interrogation</div>
                     {eventAILoading ? (
-                      <div className="text-ink-500 text-xs cursor-blink">Processing</div>
+                      <div className="flex items-center gap-2 text-txt-muted text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </div>
                     ) : eventAI ? (
-                      <p className="text-ink-300 text-xs italic leading-relaxed">"{eventAI}"</p>
+                      <p className="text-txt-light text-sm italic leading-relaxed">"{eventAI}"</p>
                     ) : (
                       <button
                         onClick={() => askAboutEvent(selectedEvent)}
-                        className="text-accent-red hover:text-accent-glow text-xs transition-colors"
+                        className="text-brand-light hover:text-brand-glow text-sm transition-colors"
                       >
-                        &gt; Query subject
+                        Query subject →
                       </button>
                     )}
                   </div>
@@ -983,28 +987,25 @@ export default function GlobeView({ relationships, stats }: Props) {
             ) : (
               /* Location Detail */
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b border-ink-800 flex-shrink-0">
+                <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50 flex-shrink-0">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-accent-red text-xs">&gt;</span>
-                      <h2 className="text-sm font-medium text-white tracking-wide">{selectedLocation.name}</h2>
-                    </div>
+                    <h2 className="text-lg font-medium text-white">{selectedLocation.name}</h2>
                     <button 
                       onClick={() => setSelectedLocationName(null)}
-                      className="p-1 text-ink-500 hover:text-white transition-colors"
+                      className="p-1 text-txt-muted hover:text-white transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                   {selectedLocation.isUnknown && (
-                    <p className="text-ink-500 text-[10px] tracking-wide mb-2">
-                      // Events without geographic coordinates
+                    <p className="text-txt-muted text-xs mb-2">
+                      Events without geographic coordinates
                     </p>
                   )}
-                  <div className="flex items-center gap-4 text-[10px] text-ink-500 tracking-wide">
-                    <span>{selectedLocation.events.length} records</span>
-                    <span className="text-ink-700">|</span>
-                    <span>{selectedLocation.people.size} subjects</span>
+                  <div className="flex items-center gap-4 text-sm text-txt-muted">
+                    <span><span className="text-brand-red">{selectedLocation.events.length}</span> records</span>
+                    <span className="text-dark-500">|</span>
+                    <span><span className="text-brand-red">{selectedLocation.people.size}</span> subjects</span>
                   </div>
                   
                   {/* Bubble Map Button for Unknown Location */}
@@ -1014,32 +1015,32 @@ export default function GlobeView({ relationships, stats }: Props) {
                         setShowBubbleMap(true);
                         setBubbleMapPerson(null);
                       }}
-                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent-red hover:bg-red-600 text-white text-xs tracking-wide transition-colors"
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-red hover:bg-brand-light text-white text-sm transition-colors"
                     >
-                      <Network className="w-3.5 h-3.5" />
-                      <span>&gt; Open Network Map</span>
+                      <Network className="w-4 h-4" />
+                      <span>Open Network Map</span>
                     </button>
                   )}
                 </div>
 
                 {/* People at this location */}
-                <div className="px-4 py-3 border-b border-ink-800 flex-shrink-0">
-                  <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-2">Subjects</div>
-                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                <div className="px-4 py-3 border-b border-dark-500 flex-shrink-0">
+                  <div className="text-xs text-txt-muted uppercase tracking-wide mb-2">Subjects</div>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                     {Array.from(selectedLocation.people).slice(0, 30).map(person => (
                       <span 
                         key={person}
-                        className={`px-1.5 py-0.5 text-[10px] tracking-wide ${
+                        className={`px-2 py-1 text-xs ${
                           person === 'Jeffrey Epstein' 
-                            ? 'bg-accent-red/30 text-accent-glow' 
-                            : 'bg-ink-800 text-ink-400'
+                            ? 'bg-brand-red/40 text-brand-glow' 
+                            : 'bg-dark-600 text-txt-light'
                         }`}
                       >
                         {person}
                       </span>
                     ))}
                     {selectedLocation.people.size > 30 && (
-                      <span className="px-1.5 py-0.5 text-[10px] text-ink-600">
+                      <span className="px-2 py-1 text-xs text-txt-dim">
                         +{selectedLocation.people.size - 30}
                       </span>
                     )}
@@ -1048,7 +1049,7 @@ export default function GlobeView({ relationships, stats }: Props) {
 
                 {/* Events at this location */}
                 <div className="flex-1 overflow-y-auto px-4 py-3">
-                  <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-3">
+                  <div className="text-xs text-txt-muted uppercase tracking-wide mb-3">
                     Records [{selectedLocation.events.length}]
                   </div>
                   <div className="space-y-1">
@@ -1056,21 +1057,21 @@ export default function GlobeView({ relationships, stats }: Props) {
                       <button
                         key={i}
                         onClick={() => selectEvent(event)}
-                        className="w-full text-left px-3 py-2 hover:bg-ink-800/50 transition-colors group border-l border-transparent hover:border-l-ink-600"
+                        className="w-full text-left px-3 py-2.5 hover:bg-dark-700 transition-colors group border-l-2 border-l-transparent hover:border-l-brand-red"
                       >
-                        <div className="flex items-center justify-between text-[10px] text-ink-600 mb-1">
+                        <div className="flex items-center justify-between text-xs text-txt-dim mb-1">
                           <span className="font-mono">{event.timestamp || '----'}</span>
-                          <ChevronRight className="w-3 h-3 text-ink-700 group-hover:text-accent-red transition-colors" />
+                          <ChevronRight className="w-4 h-4 text-dark-500 group-hover:text-brand-red transition-colors" />
                         </div>
-                        <div className="text-xs leading-relaxed">
-                          <span className="text-accent-glow">{event.actor}</span>
-                          <span className="text-ink-600 mx-1">{event.action.slice(0, 30)}{event.action.length > 30 ? '...' : ''}</span>
-                          <span className="text-accent-glow">{event.target}</span>
+                        <div className="text-sm leading-relaxed">
+                          <span className="text-brand-light">{event.actor}</span>
+                          <span className="text-txt-dim mx-1">{event.action.slice(0, 25)}{event.action.length > 25 ? '...' : ''}</span>
+                          <span className="text-brand-light">{event.target}</span>
                         </div>
                       </button>
                     ))}
                     {selectedLocation.events.length > 100 && (
-                      <div className="text-center text-ink-600 text-[10px] py-2 tracking-wide">
+                      <div className="text-center text-txt-dim text-xs py-2">
                         +{selectedLocation.events.length - 100} more records
                       </div>
                     )}
@@ -1081,38 +1082,37 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
         )}
 
-      {/* Bubble Map Modal - Typewriter style */}
+      {/* Bubble Map Modal - Red/Black theme */}
       {showBubbleMap && (
-        <div className="fixed inset-0 z-50 bg-ink-950 flex flex-col font-mono">
+        <div className="fixed inset-0 z-50 bg-dark-900 flex flex-col font-mono">
           {/* Header */}
-          <div className="flex-shrink-0 bg-ink-900 border-b border-ink-800 px-4 py-3 flex items-center justify-between">
+          <div className="flex-shrink-0 bg-dark-800 border-b border-dark-500 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="text-accent-red text-xs">&gt;</span>
-              <h2 className="text-white text-xs tracking-wider uppercase">Network_Analysis</h2>
-              <span className="text-ink-600 text-[10px] tracking-wide">
-                {bubbleMapData.nodes.length} nodes | {bubbleMapData.links.length} links
+              <h2 className="text-white text-sm uppercase tracking-wide">Network Analysis</h2>
+              <span className="text-txt-muted text-xs">
+                <span className="text-brand-red">{bubbleMapData.nodes.length}</span> nodes | <span className="text-brand-red">{bubbleMapData.links.length}</span> links
               </span>
             </div>
             <div className="flex items-center gap-2">
               {/* Zoom controls */}
-              <div className="flex items-center gap-1 bg-ink-800 px-2 py-1">
+              <div className="flex items-center gap-1 bg-dark-700 px-2 py-1">
                 <button
                   onClick={() => animateBubbleView(Math.max(0.1, bubbleZoom * 0.7), undefined, undefined, 250)}
-                  className="px-2 py-1 text-ink-500 hover:text-white text-sm"
+                  className="px-2 py-1 text-txt-muted hover:text-white text-lg"
                 >
                   −
                 </button>
-                <span className="text-ink-500 text-[10px] w-12 text-center font-mono">{Math.round(bubbleZoom * 100)}%</span>
+                <span className="text-white text-xs w-14 text-center font-mono">{Math.round(bubbleZoom * 100)}%</span>
                 <button
                   onClick={() => animateBubbleView(Math.min(5, bubbleZoom * 1.4), undefined, undefined, 250)}
-                  className="px-2 py-1 text-ink-500 hover:text-white text-sm"
+                  className="px-2 py-1 text-txt-muted hover:text-white text-lg"
                 >
                   +
                 </button>
               </div>
               <button
                 onClick={() => animateBubbleView(1, 0, 0, 500)}
-                className="px-3 py-1.5 bg-ink-800 text-ink-500 hover:text-white text-[10px] tracking-wide transition-colors"
+                className="px-3 py-1.5 bg-dark-700 text-txt-muted hover:text-white text-xs transition-colors"
               >
                 Reset
               </button>
@@ -1126,9 +1126,9 @@ export default function GlobeView({ relationships, stats }: Props) {
                   setBubbleZoom(1);
                   setBubblePan({ x: 0, y: 0 });
                 }}
-                className="p-2 text-ink-500 hover:text-white transition-colors"
+                className="p-2 text-txt-muted hover:text-white transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -1141,26 +1141,26 @@ export default function GlobeView({ relationships, stats }: Props) {
                 ref={bubbleCanvasRef}
                 className="w-full h-full"
               />
-              <div className="absolute bottom-4 left-4 bg-ink-900/95 px-4 py-2 border-l-2 border-l-ink-700">
-                <div className="text-[10px] text-ink-500 tracking-wide">// Scroll: zoom | Drag: pan | Click: select</div>
+              <div className="absolute bottom-4 left-4 bg-dark-800/95 px-4 py-2 border-l-2 border-l-brand-red">
+                <div className="text-sm text-txt-muted">Scroll: zoom | Drag: pan | Click: select</div>
               </div>
             </div>
             
             {/* Selected Person Panel */}
             {bubbleMapPerson && (
-              <div className="w-80 flex-shrink-0 bg-ink-900 border-l border-ink-800 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b border-ink-800">
+              <div className="w-80 flex-shrink-0 bg-dark-800 border-l border-dark-500 flex flex-col overflow-hidden">
+                <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm text-white tracking-wide">{bubbleMapPerson}</h3>
+                    <h3 className="text-base text-white font-medium">{bubbleMapPerson}</h3>
                     <button 
                       onClick={() => setBubbleMapPerson(null)}
-                      className="p-1 text-ink-500 hover:text-white transition-colors"
+                      className="p-1 text-txt-muted hover:text-white transition-colors"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="text-[10px] text-ink-600 tracking-wide">
-                    {selectedPersonEvents.length} associated records
+                  <div className="text-xs text-txt-muted">
+                    <span className="text-brand-red">{selectedPersonEvents.length}</span> associated records
                   </div>
                 </div>
                 
@@ -1169,21 +1169,21 @@ export default function GlobeView({ relationships, stats }: Props) {
                     {selectedPersonEvents.slice(0, 50).map((event, i) => (
                       <div
                         key={i}
-                        className="p-2 border-l border-ink-700 hover:border-l-accent-red transition-colors"
+                        className="p-2 border-l-2 border-l-dark-500 hover:border-l-brand-red transition-colors"
                       >
                         {/* Event Header */}
-                        <div className="text-xs leading-relaxed mb-1">
-                          <span className={event.actor === bubbleMapPerson ? 'text-accent-glow' : 'text-ink-400'}>
+                        <div className="text-sm leading-relaxed mb-1">
+                          <span className={event.actor === bubbleMapPerson ? 'text-brand-light' : 'text-txt-light'}>
                             {event.actor}
                           </span>
-                          <span className="text-ink-600 mx-1">{event.action.slice(0, 20)}...</span>
-                          <span className={event.target === bubbleMapPerson ? 'text-accent-glow' : 'text-ink-400'}>
+                          <span className="text-txt-dim mx-1">{event.action.slice(0, 20)}...</span>
+                          <span className={event.target === bubbleMapPerson ? 'text-brand-light' : 'text-txt-light'}>
                             {event.target}
                           </span>
                         </div>
                         
                         {/* Event Details */}
-                        <div className="flex items-center gap-3 text-[10px] text-ink-600">
+                        <div className="flex items-center gap-3 text-xs text-txt-dim">
                           <span className="font-mono">{event.timestamp || '----'}</span>
                           <span className="font-mono truncate">{event.doc_id}</span>
                         </div>
@@ -1191,7 +1191,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                     ))}
                     
                     {selectedPersonEvents.length > 50 && (
-                      <div className="text-center text-ink-600 text-[10px] py-2 tracking-wide">
+                      <div className="text-center text-txt-dim text-xs py-2">
                         +{selectedPersonEvents.length - 50} more
                       </div>
                     )}
@@ -1203,68 +1203,71 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
       )}
 
-      {/* Document Modal - Typewriter/Dossier style */}
+      {/* Document Modal - Red/Black theme */}
       {showDocumentModal && (
-        <div className="fixed inset-0 z-[60] bg-ink-950/95 flex items-center justify-center p-4 font-mono">
-          <div className="bg-ink-900 max-w-4xl w-full max-h-[90vh] flex flex-col border border-ink-800 shadow-2xl">
+        <div className="fixed inset-0 z-[60] bg-dark-900/98 flex items-center justify-center p-4 font-mono">
+          <div className="bg-dark-800 max-w-4xl w-full max-h-[90vh] flex flex-col border border-dark-500 shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-ink-800">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-500 bg-dark-700/50">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-accent-red text-xs">&gt;</span>
-                  <h2 className="text-white text-sm tracking-wider uppercase">Document_Analysis</h2>
-                </div>
+                <h2 className="text-white text-base font-medium mb-1">Document Analysis</h2>
                 {documentMeta && (
-                  <div className="text-ink-500 text-[10px] tracking-wide font-mono pl-4">{documentMeta.doc_id} | {documentMeta.category}</div>
+                  <div className="text-txt-muted text-sm font-mono">{documentMeta.doc_id} | {documentMeta.category}</div>
                 )}
               </div>
               <button
                 onClick={() => setShowDocumentModal(false)}
-                className="p-2 text-ink-500 hover:text-white transition-colors"
+                className="p-2 text-txt-muted hover:text-white transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* AI Epstein Summary */}
-            <div className="px-5 py-4 border-b border-ink-800 bg-ink-800/30 border-l-2 border-l-accent-red mx-5 my-4">
-              <div className="text-[10px] text-accent-red uppercase tracking-widest mb-3">&gt; Subject_Response</div>
+            <div className="mx-5 my-4 p-4 bg-brand-dark/30 border-l-2 border-l-brand-red">
+              <div className="text-xs text-brand-red uppercase tracking-wide mb-3">Subject Response</div>
               {documentAILoading ? (
-                <div className="text-ink-500 text-xs cursor-blink">Processing document...</div>
+                <div className="flex items-center gap-2 text-txt-muted text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing document...
+                </div>
               ) : documentAI ? (
-                <p className="text-ink-200 text-xs italic leading-relaxed">"{documentAI}"</p>
+                <p className="text-txt-light text-sm italic leading-relaxed">"{documentAI}"</p>
               ) : (
-                <p className="text-ink-600 text-xs italic">No response recorded</p>
+                <p className="text-txt-dim text-sm italic">No response recorded</p>
               )}
             </div>
 
             {/* Document Content */}
             <div className="flex-1 overflow-y-auto px-5 pb-4">
-              <div className="text-[10px] text-ink-600 uppercase tracking-widest mb-3">// Raw_Document</div>
+              <div className="text-xs text-txt-muted uppercase tracking-wide mb-3">Raw Document</div>
               {documentLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="text-ink-500 text-xs cursor-blink">Loading...</div>
+                  <div className="flex items-center gap-2 text-txt-muted text-sm">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Loading...
+                  </div>
                 </div>
               ) : documentText ? (
-                <div className="bg-ink-800/30 p-5 border-l border-ink-700">
-                  <div className="text-ink-300 text-xs whitespace-pre-wrap leading-relaxed max-h-[350px] overflow-y-auto">
+                <div className="bg-dark-700 p-5 border-l-2 border-l-dark-500">
+                  <div className="text-txt-light text-sm whitespace-pre-wrap leading-relaxed max-h-[350px] overflow-y-auto">
                     {documentText}
                   </div>
                 </div>
               ) : (
-                <div className="text-ink-600 text-center py-8 text-xs">
-                  // Document unavailable
+                <div className="text-txt-dim text-center py-8 text-sm">
+                  Document unavailable
                 </div>
               )}
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-ink-800 flex justify-end">
+            <div className="px-5 py-3 border-t border-dark-500 flex justify-end">
               <button
                 onClick={() => setShowDocumentModal(false)}
-                className="px-4 py-2 bg-ink-800 hover:bg-ink-700 text-ink-300 text-xs tracking-wide transition-colors"
+                className="px-4 py-2 bg-dark-600 hover:bg-dark-500 text-white text-sm transition-colors"
               >
-                [Close]
+                Close
               </button>
             </div>
           </div>

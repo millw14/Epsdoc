@@ -8,36 +8,32 @@ export default {
     extend: {
       fontFamily: {
         mono: ['JetBrains Mono', 'Space Mono', 'Consolas', 'monospace'],
-        typewriter: ['Space Mono', 'JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        ink: {
-          50: '#f5f5f4',
-          100: '#e7e5e4',
-          200: '#d6d3d1',
-          300: '#a8a29e',
-          400: '#78716c',
-          500: '#57534e',
-          600: '#44403c',
-          700: '#292524',
-          800: '#1c1917',
-          900: '#0c0a09',
-          950: '#0a0908',
+        // Black backgrounds
+        dark: {
+          900: '#0a0a0a',
+          800: '#111111',
+          700: '#1a1a1a',
+          600: '#222222',
+          500: '#2a2a2a',
+          400: '#333333',
         },
-        paper: {
-          50: '#fdfcfb',
-          100: '#f5f3f0',
-          200: '#e8e4de',
-          300: '#d4cec4',
+        // Red accents (matching logo)
+        brand: {
+          red: '#dc2626',
+          dark: '#991b1b',
+          light: '#ef4444',
+          glow: '#f87171',
         },
-        accent: {
-          red: '#b91c1c',
-          glow: '#dc2626',
+        // Text colors - high contrast
+        txt: {
+          white: '#ffffff',
+          light: '#e5e5e5',
+          muted: '#a3a3a3',
+          dim: '#737373',
         }
       },
-      letterSpacing: {
-        typewriter: '0.05em',
-      }
     },
   },
   plugins: [],
