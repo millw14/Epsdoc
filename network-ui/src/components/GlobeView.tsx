@@ -8,7 +8,7 @@ import { getLocationCoords, normalizeLocation } from '../lib/locations';
 import RotatingEarth from './ui/wireframe-dotted-globe';
 import { useAIChat } from '../lib/ai-explanations';
 import { fetchDocumentText, fetchDocument } from '../api';
-import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink } from 'lucide-react';
+import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
 
 interface Props {
   relationships: Relationship[];
@@ -42,6 +42,7 @@ export default function GlobeView({ relationships, stats }: Props) {
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentAI, setDocumentAI] = useState<string | null>(null);
   const [documentAILoading, setDocumentAILoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const bubbleCanvasRef = useRef<HTMLCanvasElement>(null);
   const bubbleNodesRef = useRef<Array<{ name: string; x: number; y: number; radius: number; connections: number }>>([]);
@@ -648,19 +649,28 @@ export default function GlobeView({ relationships, stats }: Props) {
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
         {/* Globe Container */}
-        <div className="flex-1 relative flex items-center justify-center p-4">
+        <div className="flex-1 relative flex items-center justify-center p-2">
           <RotatingEarth
-            width={800}
-            height={600}
-            className="max-w-full"
+            width={isFullscreen ? 1200 : 900}
+            height={isFullscreen ? 800 : 650}
+            className="max-w-full max-h-full"
             locations={globeMarkers}
             selectedLocation={selectedLocationName}
             onLocationClick={handleLocationClick}
             onLocationHover={setHoveredLocation}
           />
           
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="absolute top-4 right-4 p-2 bg-gray-900/90 hover:bg-gray-800 rounded-lg border border-gray-700 text-gray-400 hover:text-white transition-colors z-10"
+            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+          
           {/* Legend */}
-          <div className="absolute bottom-4 left-4 bg-gray-900/95 rounded-lg p-4 text-sm backdrop-blur border border-gray-800">
+          <div className={`absolute bottom-4 left-4 bg-gray-900/95 rounded-lg p-4 text-sm backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}>
             <div className="text-gray-400 text-xs uppercase mb-3">Click locations to explore</div>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -686,7 +696,7 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
 
           {/* Location List */}
-          <div className="absolute top-4 left-4 bg-gray-900/95 rounded-lg overflow-hidden w-64 backdrop-blur border border-gray-800">
+          <div className={`absolute top-4 left-4 bg-gray-900/95 rounded-lg overflow-hidden w-64 backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}
             <div className="p-3 border-b border-gray-800">
               <div className="text-xs text-gray-500 uppercase">Locations</div>
             </div>
@@ -748,7 +758,7 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
 
         {/* AI Chat Panel */}
-        {showChatPanel && (
+        {showChatPanel && !isFullscreen && (
           <div className="w-80 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -847,7 +857,7 @@ export default function GlobeView({ relationships, stats }: Props) {
         )}
 
         {/* Detail Panel */}
-        {selectedLocation && (
+        {selectedLocation && !isFullscreen && (
           <div className="w-96 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
             {selectedEvent ? (
               /* Event Detail - Full Information */
