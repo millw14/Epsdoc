@@ -49,7 +49,7 @@ export default function RotatingEarth({
     const startRotation = [...rotationRef.current] as [number, number]
     const startScale = projectionRef.current.scale()
     const baseRadius = containerDimensionsRef.current.radius
-    const targetScale = baseRadius * 2.5
+    const targetScale = baseRadius * 3.5
     const duration = 1200
     const startTime = Date.now()
     
@@ -396,8 +396,8 @@ export default function RotatingEarth({
 
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault()
-      const scaleFactor = event.deltaY > 0 ? 0.95 : 1.05
-      const newRadius = Math.max(radius * 0.5, Math.min(radius * 2.5, projection.scale() * scaleFactor))
+      const scaleFactor = event.deltaY > 0 ? 0.92 : 1.08
+      const newRadius = Math.max(radius * 0.5, Math.min(radius * 6, projection.scale() * scaleFactor))
       projection.scale(newRadius)
     }
 
