@@ -12,7 +12,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          d3: ['d3-geo', 'd3-timer']
+          d3: ['d3-geo', 'd3-timer'],
+          three: ['three', 'three-globe', 'react-globe.gl']
         }
       }
     }

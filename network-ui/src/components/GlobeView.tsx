@@ -5,7 +5,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { Relationship, Stats } from '../types';
 import { getLocationCoords, normalizeLocation } from '../lib/locations';
-import RotatingEarth from './ui/wireframe-dotted-globe';
+import GlobeGL from './ui/GlobeGL';
 import { useAIChat } from '../lib/ai-explanations';
 import { fetchDocumentText, fetchDocument } from '../api';
 import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
@@ -152,13 +152,13 @@ export default function GlobeView({ relationships, stats }: Props) {
     return { locationData: sortedLocations, unknownLocationData: unknown };
   }, [relationships]);
 
-  // Convert to globe marker format
+  // Convert to globe marker format for Globe.GL
   const globeMarkers = useMemo(() => {
     return locationData.map(loc => ({
       name: loc.name,
-      coords: loc.coords,
+      lat: loc.coords[0],
+      lng: loc.coords[1],
       eventCount: loc.events.length,
-      peopleCount: loc.people.size,
       color: loc.name === 'US Virgin Islands' ? '#dc2626' :
              loc.name === 'New York' ? '#7c3aed' :
              loc.name === 'Palm Beach' ? '#f59e0b' : '#dc2626'
@@ -493,9 +493,9 @@ export default function GlobeView({ relationships, stats }: Props) {
     setEventAI(null);
   }, []);
 
-  // Open document modal and fetch content with AI summary
-  const openDocumentModal = useCallback(async (event: Relationship) => {
-    setShowDocumentModal(true);
+  // Pre-load document content when event is selected (background fetch)
+  const preloadDocument = useCallback(async (event: Relationship) => {
+    // Reset state for new document
     setDocumentText(null);
     setDocumentMeta(null);
     setDocumentAI(null);
@@ -561,6 +561,19 @@ export default function GlobeView({ relationships, stats }: Props) {
       setDocumentLoading(false);
       setDocumentAILoading(false);
     }
+  }, []);
+
+  // Select event and preload document
+  const selectEvent = useCallback((event: Relationship) => {
+    setSelectedEvent(event);
+    setEventAI(null);
+    // Start preloading document in background
+    preloadDocument(event);
+  }, [preloadDocument]);
+
+  // Open document modal (content already preloaded)
+  const openDocumentModal = useCallback(() => {
+    setShowDocumentModal(true);
   }, []);
 
   // Handle chat submit
@@ -650,7 +663,7 @@ export default function GlobeView({ relationships, stats }: Props) {
       <div className="flex-1 flex min-h-0">
         {/* Globe Container */}
         <div className="flex-1 relative flex items-center justify-center p-2">
-          <RotatingEarth
+          <GlobeGL
             width={isFullscreen ? 1200 : 900}
             height={isFullscreen ? 800 : 650}
             className="max-w-full max-h-full"
@@ -949,11 +962,25 @@ export default function GlobeView({ relationships, stats }: Props) {
                     <div className="text-white font-mono text-sm">{selectedEvent.doc_id}</div>
                     <div className="text-gray-500 text-xs mt-1">Event ID: {selectedEvent.id}</div>
                     <button
-                      onClick={() => openDocumentModal(selectedEvent)}
+                      onClick={openDocumentModal}
                       className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm transition-colors"
                     >
                       <BookOpen className="w-4 h-4" />
-                      View Document & AI Summary
+                      {documentLoading ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Loading...
+                        </>
+                      ) : documentAILoading ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          AI Analyzing...
+                        </>
+                      ) : documentAI ? (
+                        'View Document & AI Summary ✓'
+                      ) : (
+                        'View Document & AI Summary'
+                      )}
                     </button>
                   </div>
                   
@@ -1081,7 +1108,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                     {selectedLocation.events.slice(0, 100).map((event, i) => (
                       <button
                         key={i}
-                        onClick={() => { setSelectedEvent(event); setEventAI(null); }}
+                        onClick={() => selectEvent(event)}
                         className="w-full text-left p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group"
                       >
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
