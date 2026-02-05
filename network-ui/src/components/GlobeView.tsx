@@ -842,8 +842,8 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
         )}
 
-      {/* Detail Panel - Red/Black theme */}
-      {selectedLocation && (
+      {/* Detail Panel - Red/Black theme - Hide when chat is open */}
+      {selectedLocation && !showChatPanel && (
         <div className="absolute right-0 top-14 bottom-0 z-20 w-96 bg-dark-800/98 backdrop-blur-sm border-l border-dark-500 flex flex-col">
             {selectedEvent ? (
               /* Event Detail */
