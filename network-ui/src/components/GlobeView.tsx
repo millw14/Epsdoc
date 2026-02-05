@@ -1277,8 +1277,8 @@ export default function GlobeView({ relationships, stats }: Props) {
             </div>
 
             {/* AI Epstein Summary */}
-            <div className="p-4 border-b border-gray-800 bg-red-950/30">
-              <div className="flex items-center gap-2 text-xs text-red-400 mb-2">
+            <div className="p-5 border-b border-gray-800 bg-gradient-to-r from-red-950/40 to-red-900/20">
+              <div className="flex items-center gap-2 text-sm text-red-400 mb-3 font-medium">
                 <MessageCircle className="w-4 h-4" />
                 Epstein's Response (based on document)
               </div>
@@ -1288,7 +1288,7 @@ export default function GlobeView({ relationships, stats }: Props) {
                   <span className="italic">Reading document...</span>
                 </div>
               ) : documentAI ? (
-                <p className="text-gray-200 italic leading-relaxed">"{documentAI}"</p>
+                <p className="text-gray-100 italic leading-7 text-base">"{documentAI}"</p>
               ) : (
                 <p className="text-gray-500 italic">No response available</p>
               )}
@@ -1308,10 +1308,10 @@ export default function GlobeView({ relationships, stats }: Props) {
                   </div>
                 </div>
               ) : documentText ? (
-                <div className="bg-gray-950 rounded-lg p-4 border border-gray-800">
-                  <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono leading-relaxed max-h-[400px] overflow-y-auto">
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div className="text-gray-100 text-base whitespace-pre-wrap leading-7 max-h-[400px] overflow-y-auto font-sans">
                     {documentText}
-                  </pre>
+                  </div>
                 </div>
               ) : (
                 <div className="text-gray-500 text-center py-8">
