@@ -72,7 +72,76 @@ app.use((req, res, next) => {
   next();
 });
 
+// Download database if missing or invalid
+async function ensureDatabase(): Promise<void> {
+  const DB_URL = process.env.DB_URL;
+  
+  // Check if database exists and is valid
+  let needsDownload = false;
+  
+  if (!fs.existsSync(DB_PATH)) {
+    console.log(`Database file not found at ${DB_PATH}`);
+    needsDownload = true;
+  } else {
+    // Check if it's a valid SQLite file (not an LFS pointer)
+    const stats = fs.statSync(DB_PATH);
+    if (stats.size < 1000000) { // Less than 1MB is likely an LFS pointer
+      console.log(`Database file is too small (${stats.size} bytes), likely an LFS pointer`);
+      needsDownload = true;
+    } else {
+      // Check SQLite header
+      const header = Buffer.alloc(16);
+      const fd = fs.openSync(DB_PATH, 'r');
+      fs.readSync(fd, header, 0, 16, 0);
+      fs.closeSync(fd);
+      if (!header.toString('utf8').startsWith('SQLite format 3')) {
+        console.log('Database file is not a valid SQLite database');
+        needsDownload = true;
+      }
+    }
+  }
+  
+  if (needsDownload) {
+    if (!DB_URL) {
+      console.error('ERROR: Database missing and DB_URL environment variable not set!');
+      console.error('Please set DB_URL to the download URL of your database file.');
+      process.exit(1);
+    }
+    
+    console.log(`Downloading database from: ${DB_URL}`);
+    
+    try {
+      const response = await fetch(DB_URL, { redirect: 'follow' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      console.log(`Downloaded ${buffer.length} bytes`);
+      
+      // Verify it's a valid SQLite file
+      if (!buffer.toString('utf8', 0, 16).startsWith('SQLite format 3')) {
+        console.error('ERROR: Downloaded file is not a valid SQLite database!');
+        console.error('First 100 bytes:', buffer.toString('utf8', 0, 100));
+        process.exit(1);
+      }
+      
+      fs.writeFileSync(DB_PATH, buffer);
+      console.log(`✓ Database saved to ${DB_PATH}`);
+    } catch (error) {
+      console.error('Failed to download database:', error);
+      process.exit(1);
+    }
+  } else {
+    console.log(`✓ Database file exists and is valid: ${DB_PATH}`);
+  }
+}
+
 // Initialize database with error handling
+await ensureDatabase();
+
 let db: Database.Database;
 try {
   db = new Database(DB_PATH);
