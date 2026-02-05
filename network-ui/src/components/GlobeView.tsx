@@ -746,9 +746,9 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
       )}
 
-      {/* AI Chat Panel - Red/Black theme */}
+      {/* AI Chat Panel - Red/Black theme - Higher z-index to overlay detail panel */}
       {showChatPanel && (
-        <div className="absolute right-0 top-14 bottom-0 z-10 w-80 bg-dark-800/98 backdrop-blur-sm border-l border-dark-500 flex flex-col">
+        <div className="absolute right-0 top-14 bottom-0 z-30 w-96 bg-dark-800 border-l border-dark-500 flex flex-col">
             <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-brand-red">&gt;</span>
