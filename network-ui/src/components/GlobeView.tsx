@@ -1082,39 +1082,42 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
         )}
 
-      {/* Bubble Map Modal - Red/Black theme */}
+      {/* Bubble Map Modal - Fullscreen with solid background */}
       {showBubbleMap && (
-        <div className="fixed inset-0 z-50 bg-dark-900 flex flex-col font-mono">
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col font-mono">
           {/* Header */}
-          <div className="flex-shrink-0 bg-dark-800 border-b border-dark-500 px-4 py-3 flex items-center justify-between">
+          <div className="flex-shrink-0 bg-dark-800 border-b border-dark-500 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-white text-sm uppercase tracking-wide">Network Analysis</h2>
-              <span className="text-txt-muted text-xs">
-                <span className="text-brand-red">{bubbleMapData.nodes.length}</span> nodes | <span className="text-brand-red">{bubbleMapData.links.length}</span> links
+              <Network className="w-5 h-5 text-brand-red" />
+              <h2 className="text-white text-lg font-medium">Network Analysis</h2>
+              <span className="text-txt-muted text-sm">
+                <span className="text-brand-red font-medium">{bubbleMapData.nodes.length}</span> nodes
+                <span className="text-dark-500 mx-2">|</span>
+                <span className="text-brand-red font-medium">{bubbleMapData.links.length}</span> links
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Zoom controls */}
-              <div className="flex items-center gap-1 bg-dark-700 px-2 py-1">
+              <div className="flex items-center gap-1 bg-dark-700 px-3 py-1.5 border border-dark-500">
                 <button
                   onClick={() => animateBubbleView(Math.max(0.1, bubbleZoom * 0.7), undefined, undefined, 250)}
-                  className="px-2 py-1 text-txt-muted hover:text-white text-lg"
+                  className="px-2 py-1 text-txt-muted hover:text-white text-lg font-bold"
                 >
                   −
                 </button>
-                <span className="text-white text-xs w-14 text-center font-mono">{Math.round(bubbleZoom * 100)}%</span>
+                <span className="text-white text-sm w-16 text-center font-mono">{Math.round(bubbleZoom * 100)}%</span>
                 <button
                   onClick={() => animateBubbleView(Math.min(5, bubbleZoom * 1.4), undefined, undefined, 250)}
-                  className="px-2 py-1 text-txt-muted hover:text-white text-lg"
+                  className="px-2 py-1 text-txt-muted hover:text-white text-lg font-bold"
                 >
                   +
                 </button>
               </div>
               <button
                 onClick={() => animateBubbleView(1, 0, 0, 500)}
-                className="px-3 py-1.5 bg-dark-700 text-txt-muted hover:text-white text-xs transition-colors"
+                className="px-4 py-2 bg-dark-700 text-txt-light hover:text-white text-sm border border-dark-500 transition-colors"
               >
-                Reset
+                Reset View
               </button>
               <button
                 onClick={() => {
@@ -1126,41 +1129,41 @@ export default function GlobeView({ relationships, stats }: Props) {
                   setBubbleZoom(1);
                   setBubblePan({ x: 0, y: 0 });
                 }}
-                className="p-2 text-txt-muted hover:text-white transition-colors"
+                className="px-4 py-2 bg-brand-red hover:bg-brand-light text-white text-sm font-medium transition-colors"
               >
-                <X className="w-5 h-5" />
+                Close
               </button>
             </div>
           </div>
           
           {/* Content */}
-          <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex min-h-0 bg-dark-900">
             {/* Canvas */}
             <div className="flex-1 relative">
               <canvas 
                 ref={bubbleCanvasRef}
-                className="w-full h-full"
+                className="w-full h-full bg-dark-900"
               />
-              <div className="absolute bottom-4 left-4 bg-dark-800/95 px-4 py-2 border-l-2 border-l-brand-red">
-                <div className="text-sm text-txt-muted">Scroll: zoom | Drag: pan | Click: select</div>
+              <div className="absolute bottom-6 left-6 bg-dark-800 px-4 py-3 border-l-2 border-l-brand-red">
+                <div className="text-sm text-txt-light">Scroll: zoom | Drag: pan | Click: select</div>
               </div>
             </div>
             
             {/* Selected Person Panel */}
             {bubbleMapPerson && (
-              <div className="w-80 flex-shrink-0 bg-dark-800 border-l border-dark-500 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b border-dark-500 bg-dark-700/50">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-base text-white font-medium">{bubbleMapPerson}</h3>
+              <div className="w-96 flex-shrink-0 bg-dark-800 border-l border-dark-500 flex flex-col overflow-hidden">
+                <div className="px-5 py-4 border-b border-dark-500 bg-dark-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg text-white font-medium">{bubbleMapPerson}</h3>
                     <button 
                       onClick={() => setBubbleMapPerson(null)}
                       className="p-1 text-txt-muted hover:text-white transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="text-xs text-txt-muted">
-                    <span className="text-brand-red">{selectedPersonEvents.length}</span> associated records
+                  <div className="text-sm text-txt-muted">
+                    <span className="text-brand-red font-medium">{selectedPersonEvents.length}</span> associated records
                   </div>
                 </div>
                 
@@ -1169,15 +1172,15 @@ export default function GlobeView({ relationships, stats }: Props) {
                     {selectedPersonEvents.slice(0, 50).map((event, i) => (
                       <div
                         key={i}
-                        className="p-2 border-l-2 border-l-dark-500 hover:border-l-brand-red transition-colors"
+                        className="p-3 border-l-2 border-l-dark-500 hover:border-l-brand-red hover:bg-dark-700/50 transition-colors"
                       >
                         {/* Event Header */}
-                        <div className="text-sm leading-relaxed mb-1">
-                          <span className={event.actor === bubbleMapPerson ? 'text-brand-light' : 'text-txt-light'}>
+                        <div className="text-sm leading-relaxed mb-2">
+                          <span className={event.actor === bubbleMapPerson ? 'text-brand-light font-medium' : 'text-txt-light'}>
                             {event.actor}
                           </span>
-                          <span className="text-txt-dim mx-1">{event.action.slice(0, 20)}...</span>
-                          <span className={event.target === bubbleMapPerson ? 'text-brand-light' : 'text-txt-light'}>
+                          <span className="text-txt-dim mx-1">{event.action.slice(0, 25)}...</span>
+                          <span className={event.target === bubbleMapPerson ? 'text-brand-light font-medium' : 'text-txt-light'}>
                             {event.target}
                           </span>
                         </div>
@@ -1191,8 +1194,8 @@ export default function GlobeView({ relationships, stats }: Props) {
                     ))}
                     
                     {selectedPersonEvents.length > 50 && (
-                      <div className="text-center text-txt-dim text-xs py-2">
-                        +{selectedPersonEvents.length - 50} more
+                      <div className="text-center text-txt-dim text-sm py-3">
+                        +{selectedPersonEvents.length - 50} more records
                       </div>
                     )}
                   </div>
