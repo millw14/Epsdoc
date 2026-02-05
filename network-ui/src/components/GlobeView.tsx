@@ -8,7 +8,7 @@ import { getLocationCoords, normalizeLocation } from '../lib/locations';
 import GlobeGL from './ui/GlobeGL';
 import { useAIChat } from '../lib/ai-explanations';
 import { fetchDocumentText, fetchDocument } from '../api';
-import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
+import { X, MapPin, Users, FileText, Clock, ChevronLeft, MessageCircle, Loader2, Globe, ChevronRight, HelpCircle, Send, Tag, Hash, Network, ArrowRight, BookOpen, ExternalLink, Maximize2, Minimize2, Menu } from 'lucide-react';
 
 interface Props {
   relationships: Relationship[];
@@ -43,6 +43,7 @@ export default function GlobeView({ relationships, stats }: Props) {
   const [documentAI, setDocumentAI] = useState<string | null>(null);
   const [documentAILoading, setDocumentAILoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showMenu, setShowMenu] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const bubbleCanvasRef = useRef<HTMLCanvasElement>(null);
   const bubbleNodesRef = useRef<Array<{ name: string; x: number; y: number; radius: number; connections: number }>>([]);
@@ -631,25 +632,46 @@ export default function GlobeView({ relationships, stats }: Props) {
   }, []);
 
   return (
-    <div className="h-screen bg-gray-950 flex flex-col">
-      {/* Header */}
-      <header className="flex-shrink-0 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 py-3">
+    <div className="h-screen bg-gray-950 relative overflow-hidden">
+      {/* Fullscreen Globe */}
+      <div className="absolute inset-0">
+        <GlobeGL
+          width={window.innerWidth}
+          height={window.innerHeight}
+          className="w-full h-full"
+          locations={globeMarkers}
+          selectedLocation={selectedLocationName}
+          onLocationClick={handleLocationClick}
+          onLocationHover={setHoveredLocation}
+        />
+      </div>
+
+      {/* Top Bar - Floating */}
+      <header className="absolute top-0 left-0 right-0 z-20 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="Webstein" className="w-8 h-8" />
-            <h1 className="text-white font-semibold text-lg">Webstein</h1>
+            {/* Menu Toggle */}
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 bg-gray-900/90 hover:bg-gray-800 rounded-lg border border-gray-700 text-gray-400 hover:text-white transition-colors"
+            >
+              {showMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="flex items-center gap-2 bg-gray-900/90 px-3 py-2 rounded-lg border border-gray-800">
+              <img src="/favicon.png" alt="Webstein" className="w-6 h-6" />
+              <h1 className="text-white font-semibold">Webstein</h1>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-gray-500 text-sm hidden sm:block">
-              {locationData.length} locations | {totalLocatedEvents.toLocaleString()} mapped events
-              {totalUnknownEvents > 0 && ` | ${totalUnknownEvents.toLocaleString()} unmapped`}
+          <div className="flex items-center gap-3">
+            <div className="text-gray-400 text-sm bg-gray-900/90 px-3 py-2 rounded-lg border border-gray-800 hidden md:block">
+              {locationData.length} locations | {totalLocatedEvents.toLocaleString()} events
             </div>
             <button
               onClick={() => setShowChatPanel(!showChatPanel)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors border ${
                 showChatPanel 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-red-600 text-white border-red-500' 
+                  : 'bg-gray-900/90 text-gray-400 hover:bg-gray-800 hover:text-white border-gray-700'
               }`}
             >
               <MessageCircle className="w-4 h-4" />
@@ -659,120 +681,92 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
-        {/* Globe Container */}
-        <div className="flex-1 relative flex items-center justify-center p-2">
-          <GlobeGL
-            width={isFullscreen ? 1200 : 900}
-            height={isFullscreen ? 800 : 650}
-            className="max-w-full max-h-full"
-            locations={globeMarkers}
-            selectedLocation={selectedLocationName}
-            onLocationClick={handleLocationClick}
-            onLocationHover={setHoveredLocation}
-          />
-          
-          {/* Fullscreen Toggle */}
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="absolute top-4 right-4 p-2 bg-gray-900/90 hover:bg-gray-800 rounded-lg border border-gray-700 text-gray-400 hover:text-white transition-colors z-10"
-            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-          </button>
-          
-          {/* Legend */}
-          <div className={`absolute bottom-4 left-4 bg-gray-900/95 rounded-lg p-4 text-sm backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}>
-            <div className="text-gray-400 text-xs uppercase mb-3">Click locations to explore</div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-600"></div>
-                <span className="text-gray-300">US Virgin Islands</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-violet-600"></div>
-                <span className="text-gray-300">New York</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-amber-500"></div>
-                <span className="text-gray-300">Palm Beach</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-gray-300">Other locations</span>
-              </div>
-            </div>
-            <div className="text-gray-600 text-xs mt-3 pt-3 border-t border-gray-800">
-              Drag to rotate | Click a location to zoom | Scroll to zoom
-            </div>
+      {/* Left Sidebar - Overlay */}
+      <div className={`absolute left-0 top-16 bottom-0 z-10 transition-transform duration-300 ${showMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-full w-72 bg-gray-900/95 backdrop-blur border-r border-gray-800 flex flex-col">
+          {/* Locations List */}
+          <div className="p-4 border-b border-gray-800">
+            <div className="text-xs text-gray-500 uppercase font-medium">Locations</div>
           </div>
-
-          {/* Location List */}
-          <div className={`absolute top-4 left-4 bg-gray-900/95 rounded-lg overflow-hidden w-64 backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}>
-            <div className="p-3 border-b border-gray-800">
-              <div className="text-xs text-gray-500 uppercase">Locations</div>
-            </div>
-            <div className="max-h-72 overflow-y-auto">
-              {locationData.slice(0, 15).map(loc => (
+          <div className="flex-1 overflow-y-auto">
+            {locationData.map(loc => (
+              <button
+                key={loc.name}
+                onClick={() => handleLocationClick(loc.name)}
+                className={`w-full text-left px-4 py-3 hover:bg-gray-800/80 transition-colors flex items-center justify-between group ${
+                  selectedLocationName === loc.name ? 'bg-red-900/40 border-l-2 border-l-red-500' : ''
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    loc.name === 'US Virgin Islands' ? 'bg-red-500' :
+                    loc.name === 'New York' ? 'bg-violet-500' :
+                    loc.name === 'Palm Beach' ? 'bg-amber-500' : 'bg-red-500'
+                  }`}></div>
+                  <span className="text-gray-200">{loc.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">{loc.events.length}</span>
+                  <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-red-400" />
+                </div>
+              </button>
+            ))}
+            
+              {/* Unknown/Unmapped events */}
+            {unknownLocationData && (
+              <>
+                <div className="border-t border-gray-800 my-2"></div>
                 <button
-                  key={loc.name}
-                  onClick={() => handleLocationClick(loc.name)}
-                  className={`w-full text-left px-3 py-2 hover:bg-gray-800/80 transition-colors flex items-center justify-between group ${
-                    selectedLocationName === loc.name ? 'bg-red-900/30 border-l-2 border-l-red-500' : ''
+                  onClick={() => handleLocationClick('Unknown/Unspecified')}
+                  className={`w-full text-left px-4 py-3 hover:bg-gray-800/80 transition-colors flex items-center justify-between group ${
+                    selectedLocationName === 'Unknown/Unspecified' ? 'bg-amber-900/40 border-l-2 border-l-amber-500' : ''
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      loc.name === 'US Virgin Islands' ? 'bg-red-500' :
-                      loc.name === 'New York' ? 'bg-violet-500' :
-                      loc.name === 'Palm Beach' ? 'bg-amber-500' : 'bg-red-500'
-                    }`}></div>
-                    <span className="text-gray-200 text-sm">{loc.name}</span>
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="w-4 h-4 text-amber-500" />
+                    <span className="text-gray-300">Unknown/Unspecified</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-500 text-xs">{loc.events.length}</span>
-                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-red-400" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-sm">{unknownLocationData.events.length}</span>
+                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400" />
                   </div>
                 </button>
-              ))}
-              
-              {/* Unknown/Unmapped events */}
-              {unknownLocationData && (
-                <>
-                  <div className="border-t border-gray-800 my-1"></div>
-                  <button
-                    onClick={() => handleLocationClick('Unknown/Unspecified')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-800/80 transition-colors flex items-center justify-between group ${
-                      selectedLocationName === 'Unknown/Unspecified' ? 'bg-amber-900/30 border-l-2 border-l-amber-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400 text-sm">Unknown/Unspecified</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-500 text-xs">{unknownLocationData.events.length}</span>
-                      <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-400" />
-                    </div>
-                  </button>
-                </>
-              )}
+              </>
+            )}
+          </div>
+          
+          {/* Legend at bottom of sidebar */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="text-xs text-gray-500 uppercase mb-3">Legend</div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span className="text-gray-400">US Virgin Islands</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-violet-500"></div>
+                <span className="text-gray-400">New York</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                <span className="text-gray-400">Palm Beach</span>
+              </div>
             </div>
           </div>
-
-          {/* Hover tooltip */}
-          {hoveredLocation && !selectedLocation && (
-            <div className="absolute top-4 right-4 bg-gray-900/95 rounded-lg p-3 backdrop-blur border border-gray-800">
-              <div className="text-white font-medium">{hoveredLocation}</div>
-              <div className="text-gray-500 text-sm">Click to view events</div>
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* AI Chat Panel */}
-        {showChatPanel && !isFullscreen && (
-          <div className="w-80 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
+      {/* Hover tooltip */}
+      {hoveredLocation && !selectedLocation && (
+        <div className="absolute top-20 right-4 z-20 bg-gray-900/95 rounded-lg p-3 backdrop-blur border border-gray-800">
+          <div className="text-white font-medium">{hoveredLocation}</div>
+          <div className="text-gray-500 text-sm">Click to view events</div>
+        </div>
+      )}
+
+      {/* AI Chat Panel - Overlay */}
+      {showChatPanel && (
+        <div className="absolute right-0 top-16 bottom-0 z-10 w-80 bg-gray-900/95 backdrop-blur border-l border-gray-800 flex flex-col">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-red-400" />
@@ -869,9 +863,9 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
         )}
 
-        {/* Detail Panel */}
-        {selectedLocation && !isFullscreen && (
-          <div className="w-96 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
+      {/* Detail Panel - Overlay */}
+      {selectedLocation && (
+        <div className="absolute right-0 top-16 bottom-0 z-20 w-96 bg-gray-900/95 backdrop-blur border-l border-gray-800 flex flex-col">
             {selectedEvent ? (
               /* Event Detail - Full Information */
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -1136,7 +1130,6 @@ export default function GlobeView({ relationships, stats }: Props) {
             )}
           </div>
         )}
-      </div>
 
       {/* Bubble Map Modal */}
       {showBubbleMap && (
