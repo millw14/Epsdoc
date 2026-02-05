@@ -56,9 +56,9 @@ function App() {
     const load = async () => {
       setLoading(true);
       try {
-        // Load more data to get locations
+        // Load data - reduced for better performance
         const response = await fetchRelationships(
-          15000,
+          5000,
           Array.from(enabledClusterIds),
           Array.from(enabledCategories),
           [1980, 2025],
