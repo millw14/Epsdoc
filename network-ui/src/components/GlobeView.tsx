@@ -1203,69 +1203,85 @@ export default function GlobeView({ relationships, stats }: Props) {
         </div>
       )}
 
-      {/* Document Modal - Red/Black theme */}
+      {/* Document Modal - Clean fullscreen modal */}
       {showDocumentModal && (
-        <div className="fixed inset-0 z-[60] bg-dark-900/98 flex items-center justify-center p-4 font-mono">
-          <div className="bg-dark-800 max-w-4xl w-full max-h-[90vh] flex flex-col border border-dark-500 shadow-2xl">
+        <div className="fixed inset-0 z-[100] bg-dark-900 flex items-center justify-center p-6 font-mono">
+          {/* Dark overlay click to close */}
+          <div 
+            className="absolute inset-0 bg-black"
+            onClick={() => setShowDocumentModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-dark-800 w-full max-w-4xl max-h-[90vh] flex flex-col border border-dark-500 shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-500 bg-dark-700/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-500 bg-dark-700">
               <div>
-                <h2 className="text-white text-base font-medium mb-1">Document Analysis</h2>
+                <h2 className="text-white text-lg font-medium mb-1">Document Analysis</h2>
                 {documentMeta && (
-                  <div className="text-txt-muted text-sm font-mono">{documentMeta.doc_id} | {documentMeta.category}</div>
+                  <div className="text-txt-muted text-sm font-mono">{documentMeta.doc_id} <span className="text-dark-500">|</span> {documentMeta.category}</div>
                 )}
               </div>
               <button
                 onClick={() => setShowDocumentModal(false)}
-                className="p-2 text-txt-muted hover:text-white transition-colors"
+                className="p-2 text-txt-muted hover:text-white hover:bg-dark-600 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            {/* AI Epstein Summary */}
-            <div className="mx-5 my-4 p-4 bg-brand-dark/30 border-l-2 border-l-brand-red">
-              <div className="text-xs text-brand-red uppercase tracking-wide mb-3">Subject Response</div>
-              {documentAILoading ? (
-                <div className="flex items-center gap-2 text-txt-muted text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing document...
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* AI Epstein Summary */}
+              <div className="p-6 bg-brand-dark/20 border-b border-dark-500">
+                <div className="flex items-center gap-2 text-brand-red text-sm uppercase tracking-wide mb-4">
+                  <MessageCircle className="w-4 h-4" />
+                  Subject Response
                 </div>
-              ) : documentAI ? (
-                <p className="text-txt-light text-sm italic leading-relaxed">"{documentAI}"</p>
-              ) : (
-                <p className="text-txt-dim text-sm italic">No response recorded</p>
-              )}
-            </div>
-
-            {/* Document Content */}
-            <div className="flex-1 overflow-y-auto px-5 pb-4">
-              <div className="text-xs text-txt-muted uppercase tracking-wide mb-3">Raw Document</div>
-              {documentLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-2 text-txt-muted text-sm">
+                {documentAILoading ? (
+                  <div className="flex items-center gap-3 text-txt-muted">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Loading...
+                    <span>Analyzing document...</span>
                   </div>
+                ) : documentAI ? (
+                  <p className="text-txt-light text-base italic leading-relaxed border-l-2 border-l-brand-red pl-4">"{documentAI}"</p>
+                ) : (
+                  <p className="text-txt-dim italic">No response recorded</p>
+                )}
+              </div>
+
+              {/* Document Content */}
+              <div className="p-6">
+                <div className="flex items-center gap-2 text-txt-muted text-sm uppercase tracking-wide mb-4">
+                  <FileText className="w-4 h-4" />
+                  Raw Document
                 </div>
-              ) : documentText ? (
-                <div className="bg-dark-700 p-5 border-l-2 border-l-dark-500">
-                  <div className="text-txt-light text-sm whitespace-pre-wrap leading-relaxed max-h-[350px] overflow-y-auto">
-                    {documentText}
+                {documentLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="flex items-center gap-3 text-txt-muted">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span>Loading document...</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-txt-dim text-center py-8 text-sm">
-                  Document unavailable
-                </div>
-              )}
+                ) : documentText ? (
+                  <div className="bg-dark-700 p-6 border-l-2 border-l-dark-400 max-h-[400px] overflow-y-auto">
+                    <pre className="text-txt-light text-sm whitespace-pre-wrap leading-relaxed font-mono">
+                      {documentText}
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="text-txt-dim text-center py-12">
+                    Document unavailable
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-dark-500 flex justify-end">
+            <div className="px-6 py-4 border-t border-dark-500 bg-dark-700 flex justify-end">
               <button
                 onClick={() => setShowDocumentModal(false)}
-                className="px-4 py-2 bg-dark-600 hover:bg-dark-500 text-white text-sm transition-colors"
+                className="px-6 py-2.5 bg-brand-red hover:bg-brand-light text-white text-sm font-medium transition-colors"
               >
                 Close
               </button>
