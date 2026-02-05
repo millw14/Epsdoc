@@ -284,9 +284,12 @@ export default function RotatingEarth({
         context.arc(x, y, markerSize, 0, 2 * Math.PI)
         context.fillStyle = loc.color
         context.fill()
-        context.strokeStyle = isSelected ? "#ffffff" : "#000000"
-        context.lineWidth = isSelected ? 3 * scaleFactor : 2 * scaleFactor
-        context.stroke()
+        // Only show border on selected markers
+        if (isSelected) {
+          context.strokeStyle = "#ffffff"
+          context.lineWidth = 3 * scaleFactor
+          context.stroke()
+        }
 
         // Label for large markers
         if (loc.eventCount > 100 || isSelected) {
