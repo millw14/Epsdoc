@@ -2,17 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-mono: 'JetBrains Mono', 'Space Mono', 'Consolas', monospace;
+  --ink-900: #0c0a09;
+  --ink-800: #1c1917;
+  --accent-red: #b91c1c;
+}
+
 body {
   margin: 0;
-  background-color: #111827; /* bg-gray-900 to match app theme */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background-color: #0a0908;
+  font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.02em;
 }
 
 #root {
   width: 100vw;
   height: 100vh;
+}
+
+/* Typewriter styling */
+.typewriter-text {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+
+/* Custom scrollbar - minimal */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #44403c;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #57534e;
+}
+
+/* Subtle text selection */
+::selection {
+  background: rgba(185, 28, 28, 0.4);
+  color: #fff;
+}
+
+/* Dossier-style underlines */
+.underline-accent {
+  text-decoration: underline;
+  text-decoration-color: #b91c1c;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+/* Typewriter cursor blink */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: '▌';
+  animation: blink 1s infinite;
+  color: #b91c1c;
 }
