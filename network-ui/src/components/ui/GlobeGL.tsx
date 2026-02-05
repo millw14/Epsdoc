@@ -1,5 +1,6 @@
 /**
- * GlobeGL - 3D Globe visualization using Globe.GL with country polygons
+ * GlobeGL - Optimized 3D Globe visualization using Globe.GL
+ * Performance optimized: flat polygons, filtered countries, no heavy transitions
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -34,50 +35,30 @@ const LOCATION_TO_COUNTRY: Record<string, string[]> = {
   'California': ['USA'],
   'Ohio': ['USA'],
   'Boston': ['USA'],
-  'Los Angeles': ['USA'],
-  'Las Vegas': ['USA'],
   'US Virgin Islands': ['VIR'],
   'Little St. James': ['VIR'],
-  'Caribbean': ['VIR', 'PRI', 'CUB', 'JAM', 'HTI', 'DOM', 'BHS'],
+  'Caribbean': ['VIR', 'PRI', 'CUB', 'JAM'],
   'Paris': ['FRA'],
   'France': ['FRA'],
   'London': ['GBR'],
   'United Kingdom': ['GBR'],
-  'UK': ['GBR'],
   'Israel': ['ISR'],
   'Morocco': ['MAR'],
   'Marrakech': ['MAR'],
-  'Marrakech, Morocco': ['MAR'],
-  'Africa': ['MAR', 'ZAF', 'EGY', 'KEN', 'NGA'],
+  'Africa': ['MAR', 'ZAF', 'EGY'],
   'Japan': ['JPN'],
-  'Tokyo': ['JPN'],
   'Mexico': ['MEX'],
   'Canada': ['CAN'],
   'Germany': ['DEU'],
   'Switzerland': ['CHE'],
-  'Monaco': ['MCO'],
   'Australia': ['AUS'],
   'Spain': ['ESP'],
   'Italy': ['ITA'],
-  'Rome': ['ITA'],
   'Russia': ['RUS'],
   'China': ['CHN'],
-  'Hong Kong': ['HKG', 'CHN'],
   'Dubai': ['ARE'],
   'UAE': ['ARE'],
-  'Saudi Arabia': ['SAU'],
-  'Sweden': ['SWE'],
-  'Norway': ['NOR'],
-  'Denmark': ['DNK'],
-  'Netherlands': ['NLD'],
-  'Belgium': ['BEL'],
-  'Austria': ['AUT'],
-  'Greece': ['GRC'],
-  'Turkey': ['TUR'],
-  'Thailand': ['THA'],
-  'Singapore': ['SGP'],
   'Brazil': ['BRA'],
-  'Argentina': ['ARG'],
 };
 
 export default function GlobeGL({
@@ -91,27 +72,9 @@ export default function GlobeGL({
 }: Props) {
   const globeRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
-  const [countries, setCountries] = useState<any>({ features: [] });
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [allCountries, setAllCountries] = useState<any[]>([]);
 
-  // Load country GeoJSON
-  useEffect(() => {
-    fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
-      .then(res => res.json())
-      .then(data => {
-        setCountries(data);
-      })
-      .catch(err => console.error('Failed to load countries:', err));
-  }, []);
-
-  // Get highlighted country codes based on selected location
-  const highlightedCountries = useMemo(() => {
-    if (!selectedLocation) return new Set<string>();
-    const codes = LOCATION_TO_COUNTRY[selectedLocation] || [];
-    return new Set(codes);
-  }, [selectedLocation]);
-
-  // Get countries with events (for base coloring)
+  // Get all country codes that have events
   const countriesWithEvents = useMemo(() => {
     const codes = new Set<string>();
     locations.forEach(loc => {
@@ -121,77 +84,79 @@ export default function GlobeGL({
     return codes;
   }, [locations]);
 
-  // Format locations for labels
-  const labelsData = useMemo(() => locations.map(loc => ({
+  // Load and filter country GeoJSON - only keep countries with events
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+      .then(res => res.json())
+      .then(data => {
+        // Filter to only countries with events for better performance
+        const filtered = data.features.filter((f: any) => 
+          countriesWithEvents.has(f.properties.ISO_A3)
+        );
+        setAllCountries(filtered);
+      })
+      .catch(err => console.error('Failed to load countries:', err));
+  }, [countriesWithEvents]);
+
+  // Get highlighted country codes based on selected location
+  const highlightedCountries = useMemo(() => {
+    if (!selectedLocation) return new Set<string>();
+    const codes = LOCATION_TO_COUNTRY[selectedLocation] || [];
+    return new Set(codes);
+  }, [selectedLocation]);
+
+  // Memoize polygon data with colors baked in for performance
+  const polygonsData = useMemo(() => {
+    return allCountries.map(feat => ({
+      ...feat,
+      _color: highlightedCountries.has(feat.properties.ISO_A3)
+        ? 'rgba(220, 38, 38, 0.85)'
+        : 'rgba(220, 38, 38, 0.3)'
+    }));
+  }, [allCountries, highlightedCountries]);
+
+  // Format locations for points (faster than labels)
+  const pointsData = useMemo(() => locations.map(loc => ({
     lat: loc.lat,
     lng: loc.lng,
     name: loc.name,
     color: loc.color,
+    size: Math.min(Math.sqrt(loc.eventCount) * 0.08 + 0.15, 0.8),
     eventCount: loc.eventCount,
     isSelected: loc.name === selectedLocation
   })), [locations, selectedLocation]);
 
-  // Animate to location when selected - smooth zoom
+  // Animate to location when selected
   useEffect(() => {
     if (globeRef.current && selectedLocation && isReady) {
       const loc = locations.find(l => l.name === selectedLocation);
       if (loc) {
-        // Smooth camera animation with longer duration
         globeRef.current.pointOfView(
-          { lat: loc.lat, lng: loc.lng, altitude: 1.0 },
-          1200 // Longer duration for smoother feel
+          { lat: loc.lat, lng: loc.lng, altitude: 1.5 },
+          800
         );
       }
     }
   }, [selectedLocation, locations, isReady]);
 
-  // Initial setup with smooth controls - no auto rotation
+  // Initial setup
   useEffect(() => {
     if (globeRef.current && isReady) {
-      globeRef.current.pointOfView({ lat: 30, lng: -40, altitude: 2.2 }, 0);
+      globeRef.current.pointOfView({ lat: 30, lng: -40, altitude: 2.5 }, 0);
       
       const controls = globeRef.current.controls();
-      controls.autoRotate = false; // Disabled for smoother experience
-      
-      // Smoother controls
+      controls.autoRotate = false;
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
-      controls.rotateSpeed = 0.5;
-      controls.zoomSpeed = 0.8;
+      controls.rotateSpeed = 1;
+      controls.zoomSpeed = 1;
     }
   }, [isReady]);
-
-  // Get polygon color based on state
-  const getPolygonColor = useCallback((feat: any) => {
-    const countryCode = feat.properties.ISO_A3;
-    const isHighlighted = highlightedCountries.has(countryCode);
-    const hasEvents = countriesWithEvents.has(countryCode);
-    const isHovered = hovered === countryCode;
-    
-    if (isHighlighted) {
-      return 'rgba(220, 38, 38, 0.9)'; // Red for selected
-    }
-    if (isHovered) {
-      return 'rgba(220, 38, 38, 0.5)'; // Lighter red for hover
-    }
-    if (hasEvents) {
-      return 'rgba(220, 38, 38, 0.25)'; // Subtle red for countries with events
-    }
-    return 'rgba(30, 60, 90, 0.4)'; // Dark blue for others
-  }, [highlightedCountries, countriesWithEvents, hovered]);
-
-  // Get polygon altitude (extrude selected countries)
-  const getPolygonAltitude = useCallback((feat: any) => {
-    const countryCode = feat.properties.ISO_A3;
-    const isHighlighted = highlightedCountries.has(countryCode);
-    return isHighlighted ? 0.06 : 0.01;
-  }, [highlightedCountries]);
 
   const handlePolygonClick = useCallback((polygon: any) => {
     const countryCode = polygon?.properties?.ISO_A3;
     if (!countryCode) return;
     
-    // Find a location in this country
     for (const [locName, codes] of Object.entries(LOCATION_TO_COUNTRY)) {
       if (codes.includes(countryCode)) {
         const loc = locations.find(l => l.name === locName);
@@ -203,12 +168,6 @@ export default function GlobeGL({
     }
   }, [locations, onLocationClick]);
 
-  const handlePolygonHover = useCallback((polygon: any) => {
-    const countryCode = polygon?.properties?.ISO_A3 || null;
-    setHovered(countryCode);
-    document.body.style.cursor = polygon ? 'pointer' : 'default';
-  }, []);
-
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       <Globe
@@ -217,49 +176,47 @@ export default function GlobeGL({
         height={height}
         onGlobeReady={() => setIsReady(true)}
         
-        // Dark globe base
+        // Dark globe
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+        backgroundColor="#0a0a12"
         
-        // Country polygons - borderless, smooth transitions
-        polygonsData={countries.features}
-        polygonCapColor={getPolygonColor}
-        polygonSideColor={() => 'rgba(150, 50, 50, 0.1)'}
+        // Flat country polygons (no extrusion = faster)
+        polygonsData={polygonsData}
+        polygonCapColor={(d: any) => d._color}
+        polygonSideColor={() => 'transparent'}
         polygonStrokeColor={() => 'transparent'}
-        polygonAltitude={getPolygonAltitude}
-        polygonsTransitionDuration={600}
+        polygonAltitude={0.005}
+        polygonsTransitionDuration={200}
         onPolygonClick={handlePolygonClick}
-        onPolygonHover={handlePolygonHover}
         
-        // Location labels with smooth transitions
-        labelsData={labelsData}
-        labelLat="lat"
-        labelLng="lng"
-        labelText="name"
-        labelSize={(d: any) => d.isSelected ? 1.8 : 0.9}
-        labelDotRadius={(d: any) => d.isSelected ? 1.0 : 0.5}
-        labelColor={(d: any) => d.isSelected ? '#ffffff' : d.color}
-        labelResolution={3}
-        labelAltitude={(d: any) => d.isSelected ? 0.1 : 0.02}
-        labelsTransitionDuration={500}
-        onLabelClick={(label: any) => {
-          if (onLocationClick) {
-            onLocationClick(label.name);
-          }
-        }}
-        onLabelHover={(label: any) => {
-          if (onLocationHover) {
-            onLocationHover(label ? label.name : null);
-          }
-          document.body.style.cursor = label ? 'pointer' : 'default';
+        // Points instead of labels (much faster)
+        pointsData={pointsData}
+        pointLat="lat"
+        pointLng="lng"
+        pointColor={(d: any) => d.isSelected ? '#ffffff' : d.color}
+        pointAltitude={(d: any) => d.isSelected ? 0.02 : 0.005}
+        pointRadius={(d: any) => d.isSelected ? d.size * 1.5 : d.size}
+        pointsMerge={true}
+        onPointClick={(point: any) => onLocationClick?.(point.name)}
+        onPointHover={(point: any) => {
+          onLocationHover?.(point ? point.name : null);
+          document.body.style.cursor = point ? 'pointer' : 'default';
         }}
         
-        // No atmosphere border
-        showAtmosphere={false}
+        // Minimal atmosphere
+        showAtmosphere={true}
+        atmosphereColor="#dc2626"
+        atmosphereAltitude={0.08}
         
-        // Animation
-        animateIn={true}
+        animateIn={false}
       />
+      
+      {/* Location name overlay */}
+      {selectedLocation && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-2 rounded-lg border border-red-500/50">
+          <span className="text-white font-medium">{selectedLocation}</span>
+        </div>
+      )}
       
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">

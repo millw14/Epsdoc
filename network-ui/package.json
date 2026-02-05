@@ -14,13 +14,16 @@
     "@react-three/fiber": "^9.5.0",
     "@types/d3": "^7.4.3",
     "@types/three": "^0.182.0",
+    "cesium": "^1.138.0",
     "d3": "^7.9.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-force-graph": "^1.48.1",
     "react-globe.gl": "^2.37.0",
-    "three": "^0.182.0"
+    "resium": "^1.19.3",
+    "three": "^0.182.0",
+    "vite-plugin-cesium": "^1.2.23"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
