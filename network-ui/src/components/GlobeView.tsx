@@ -696,7 +696,7 @@ export default function GlobeView({ relationships, stats }: Props) {
           </div>
 
           {/* Location List */}
-          <div className={`absolute top-4 left-4 bg-gray-900/95 rounded-lg overflow-hidden w-64 backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}
+          <div className={`absolute top-4 left-4 bg-gray-900/95 rounded-lg overflow-hidden w-64 backdrop-blur border border-gray-800 ${isFullscreen ? 'hidden' : ''}`}>
             <div className="p-3 border-b border-gray-800">
               <div className="text-xs text-gray-500 uppercase">Locations</div>
             </div>
